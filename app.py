@@ -7,6 +7,7 @@ import base64
 import io
 
 app = dash.Dash(__name__)
+app.config.suppress_callback_exceptions = True
 
 def parse_xml(file_content):
     root = ET.fromstring(file_content)
@@ -67,6 +68,7 @@ def parse_xml_scores(content):
                 lap_num = int(lap.get('num', 0))
                 position = int(lap.get('p', 0))
                 et_text = lap.get('et', '0')
+                is_pit = lap.get('pit', '0') == '1'
                 
                 try:
                     et = float(et_text) if et_text else 0
@@ -88,6 +90,7 @@ def parse_xml_scores(content):
                         'Position': position,
                         'ET': et,
                         'LapTime': lap_time,
+                        'IsPit': is_pit,
                         'Class': car_cls
                     })
     
@@ -107,7 +110,7 @@ def parse_xml_scores(content):
     return df, race_info
 
 try:
-    with open('/home/ebeninca/repo/race-graphs/2025_10_26_01_40_42-54R1.xml', 'r', encoding='utf-8') as f:
+    with open('/home/ebeninca/repo/rFactor2-lmu-graphs/2025_10_26_01_40_42-54R1.xml', 'r', encoding='utf-8') as f:
         initial_df, initial_race_info = parse_xml_scores(f.read())
 except:
     initial_df = pd.DataFrame()
@@ -142,14 +145,38 @@ app.layout = html.Div([
         dcc.Dropdown(id='class-filter', multi=True, placeholder='All Classes'),
     ], style={'width': '48%', 'display': 'inline-block', 'padding': '10px'}),
     
-    dcc.Graph(id='position-chart'),
-    dcc.Graph(id='gap-chart'),
-    dcc.Graph(id='class-gap-chart'),
-    dcc.Graph(id='laptime-chart'),
+    dcc.Tabs(id='tabs', value='tab-position', children=[
+        dcc.Tab(label='Position', value='tab-position'),
+        dcc.Tab(label='Gap', value='tab-gap'),
+        dcc.Tab(label='Lap Times', value='tab-laptimes')
+    ]),
+    
+    html.Div(id='tabs-content'),
     
     dcc.Store(id='stored-data', data=initial_df.to_dict('records')),
     dcc.Store(id='stored-race-info', data=initial_race_info)
 ])
+
+@app.callback(
+    Output('tabs-content', 'children'),
+    [Input('tabs', 'value'),
+     Input('stored-data', 'data'),
+     Input('driver-filter', 'value'),
+     Input('class-filter', 'value')]
+)
+def render_tab_content(active_tab, data, selected_drivers, selected_classes):
+    if active_tab == 'tab-position':
+        return dcc.Graph(id='position-chart', figure=update_position_chart(data, selected_drivers, selected_classes))
+    elif active_tab == 'tab-gap':
+        return html.Div([
+            dcc.Graph(id='class-gap-chart', figure=update_class_gap_chart(data, selected_drivers, selected_classes)),
+            dcc.Graph(id='gap-chart', figure=update_gap_chart(data, selected_drivers, selected_classes))
+        ])
+    elif active_tab == 'tab-laptimes':
+        return html.Div([
+            dcc.Graph(id='laptime-no-pit-chart', figure=update_laptime_no_pit_chart(data, selected_drivers, selected_classes)),
+            dcc.Graph(id='laptime-chart', figure=update_laptime_chart(data, selected_drivers, selected_classes))
+        ])
 
 @app.callback(
     [Output('stored-data', 'data'),
@@ -226,12 +253,6 @@ def update_race_info(race_info):
         ])
     ])
 
-@app.callback(
-    Output('position-chart', 'figure'),
-    [Input('stored-data', 'data'),
-     Input('driver-filter', 'value'),
-     Input('class-filter', 'value')]
-)
 def update_position_chart(data, selected_drivers, selected_classes):
     df = pd.DataFrame(data)
     
@@ -271,12 +292,6 @@ def update_position_chart(data, selected_drivers, selected_classes):
     
     return fig
 
-@app.callback(
-    Output('gap-chart', 'figure'),
-    [Input('stored-data', 'data'),
-     Input('driver-filter', 'value'),
-     Input('class-filter', 'value')]
-)
 def update_gap_chart(data, selected_drivers, selected_classes):
     df = pd.DataFrame(data)
     
@@ -313,12 +328,6 @@ def update_gap_chart(data, selected_drivers, selected_classes):
     
     return fig
 
-@app.callback(
-    Output('class-gap-chart', 'figure'),
-    [Input('stored-data', 'data'),
-     Input('driver-filter', 'value'),
-     Input('class-filter', 'value')]
-)
 def update_class_gap_chart(data, selected_drivers, selected_classes):
     df = pd.DataFrame(data)
     
@@ -355,12 +364,6 @@ def update_class_gap_chart(data, selected_drivers, selected_classes):
     
     return fig
 
-@app.callback(
-    Output('laptime-chart', 'figure'),
-    [Input('stored-data', 'data'),
-     Input('driver-filter', 'value'),
-     Input('class-filter', 'value')]
-)
 def update_laptime_chart(data, selected_drivers, selected_classes):
     df = pd.DataFrame(data)
     
@@ -409,5 +412,67 @@ def update_laptime_chart(data, selected_drivers, selected_classes):
     
     return fig
 
+def update_laptime_no_pit_chart(data, selected_drivers, selected_classes):
+    df = pd.DataFrame(data)
+    
+    if df.empty:
+        return go.Figure().add_annotation(text="No data available", showarrow=False)
+    
+    # Identify all pit laps from complete dataset BEFORE filtering
+    all_data = pd.DataFrame(data)
+    exclude_set = set()
+    for driver in all_data['Driver'].unique():
+        driver_data = all_data[all_data['Driver'] == driver]
+        pit_laps = driver_data[driver_data['IsPit'] == True]['Lap'].values
+        for pit_lap in pit_laps:
+            exclude_set.add((driver, pit_lap))
+            exclude_set.add((driver, pit_lap + 1))
+    
+    # Now apply driver/class filters
+    if selected_drivers:
+        df = df[df['Driver'].isin(selected_drivers)]
+    if selected_classes:
+        df = df[df['Class'].isin(selected_classes)]
+    
+    # Filter by LapTime and exclude pit-related laps
+    df = df[df['LapTime'] > 0].copy()
+    df = df.sort_values(['Driver', 'Lap'])
+    df = df[~df.apply(lambda row: (row['Driver'], row['Lap']) in exclude_set, axis=1)]
+    
+    if df.empty:
+        return go.Figure().add_annotation(text="No lap time data available", showarrow=False)
+    
+    fig = go.Figure()
+    
+    for driver in df['Driver'].unique():
+        driver_data = df[df['Driver'] == driver].sort_values('Lap')
+        minutes = (driver_data['LapTime'] // 60).astype(int)
+        seconds = driver_data['LapTime'] % 60
+        formatted_times = [f"{int(m):02d}:{s:06.3f}" for m, s in zip(minutes, seconds)]
+        
+        fig.add_trace(go.Scatter(
+            x=driver_data['Lap'],
+            y=driver_data['LapTime'],
+            mode='lines+markers',
+            name=driver,
+            text=formatted_times,
+            hovertemplate='%{fullData.name}<br>Lap: %{x}<br>Time: %{text}<extra></extra>'
+        ))
+    
+    fig.update_layout(
+        title='Lap Times (Excluding Pit Laps)',
+        xaxis_title='Lap',
+        yaxis_title='Lap Time (seconds)',
+        hovermode='closest',
+        height=600,
+        yaxis=dict(
+            tickmode='array',
+            tickvals=[i*10 for i in range(int(df['LapTime'].min()//10), int(df['LapTime'].max()//10)+2)],
+            ticktext=[f"{int(t//60):02d}:{int(t%60):02d}" for t in [i*10 for i in range(int(df['LapTime'].min()//10), int(df['LapTime'].max()//10)+2)]]
+        )
+    )
+    
+    return fig
+
 if __name__ == '__main__':
-    app.run_server(debug=False, host='0.0.0.0', port=7860)
+    app.run_server(debug=False, host='0.0.0.0', port=7860, dev_tools_props_check=False)
