@@ -36,6 +36,24 @@ def parse_xml(file_content):
 def parse_xml_scores(content):
     root = ET.fromstring(content)
     data = []
+    race_info = {}
+    
+    # Extract race information
+    race_results = root.find('.//RaceResults')
+    if race_results is not None:
+        race_info['track'] = race_results.find('TrackVenue')
+        race_info['course'] = race_results.find('TrackCourse')
+        race_info['date'] = race_results.find('TimeString')
+        race_info['laps'] = race_results.find('RaceLaps')
+        race_info['time'] = race_results.find('RaceTime')
+        
+        race_info = {
+            'track': race_info['track'].text if race_info['track'] is not None else 'Unknown',
+            'course': race_info['course'].text if race_info['course'] is not None else 'Unknown',
+            'date': race_info['date'].text if race_info['date'] is not None else 'Unknown',
+            'laps': race_info['laps'].text if race_info['laps'] is not None else '0',
+            'time': race_info['time'].text if race_info['time'] is not None else '0'
+        }
     
     for driver in root.findall('.//Driver'):
         driver_name = driver.find('Name')
@@ -48,12 +66,17 @@ def parse_xml_scores(content):
             for lap in driver.findall('.//Lap'):
                 lap_num = int(lap.get('num', 0))
                 position = int(lap.get('p', 0))
-                et = float(lap.get('et', 0))
+                et_text = lap.get('et', '0')
+                
+                try:
+                    et = float(et_text) if et_text else 0
+                except:
+                    et = 0
                 lap_time_text = lap.text
                 
                 if lap_num > 0 and position > 0:
                     lap_time = 0
-                    if lap_time_text and lap_time_text.strip() != '--.----':
+                    if lap_time_text and lap_time_text.strip() not in ['--.----', '']:
                         try:
                             lap_time = float(lap_time_text)
                         except:
@@ -75,16 +98,19 @@ def parse_xml_scores(content):
         df = df.merge(leader_times, on='Lap')
         df['GapToLeader'] = df['ET'] - df['LeaderET']
     
-    return df
+    return df, race_info
 
 try:
     with open('/home/ebeninca/repo/race-graphs/2025_10_26_01_40_42-54R1.xml', 'r', encoding='utf-8') as f:
-        initial_df = parse_xml_scores(f.read())
+        initial_df, initial_race_info = parse_xml_scores(f.read())
 except:
     initial_df = pd.DataFrame()
+    initial_race_info = {}
 
 app.layout = html.Div([
     html.H1('Race Data Visualization', style={'textAlign': 'center'}),
+    
+    html.Div(id='race-info', style={'textAlign': 'center', 'padding': '10px', 'backgroundColor': '#f0f0f0', 'margin': '10px'}),
     
     dcc.Upload(
         id='upload-data',
@@ -110,27 +136,29 @@ app.layout = html.Div([
     dcc.Graph(id='gap-chart'),
     dcc.Graph(id='laptime-chart'),
     
-    dcc.Store(id='stored-data', data=initial_df.to_dict('records'))
+    dcc.Store(id='stored-data', data=initial_df.to_dict('records')),
+    dcc.Store(id='stored-race-info', data=initial_race_info)
 ])
 
 @app.callback(
     [Output('stored-data', 'data'),
+     Output('stored-race-info', 'data'),
      Output('upload-status', 'children')],
     Input('upload-data', 'contents'),
     State('upload-data', 'filename')
 )
 def update_data(contents, filename):
     if contents is None:
-        return initial_df.to_dict('records'), ''
+        return initial_df.to_dict('records'), initial_race_info, ''
     
     content_type, content_string = contents.split(',')
     decoded = base64.b64decode(content_string)
     
     try:
-        df = parse_xml_scores(decoded.decode('utf-8'))
-        return df.to_dict('records'), html.Div(f'✓ {filename} loaded', style={'color': 'green'})
+        df, race_info = parse_xml_scores(decoded.decode('utf-8'))
+        return df.to_dict('records'), race_info, html.Div(f'✓ {filename} loaded', style={'color': 'green'})
     except Exception as e:
-        return initial_df.to_dict('records'), html.Div(f'✗ Error: {str(e)}', style={'color': 'red'})
+        return initial_df.to_dict('records'), initial_race_info, html.Div(f'✗ Error: {str(e)}', style={'color': 'red'})
 
 @app.callback(
     [Output('driver-filter', 'options'),
@@ -146,6 +174,44 @@ def update_filters(data):
     classes = [{'label': c, 'value': c} for c in sorted(df['Class'].unique())]
     
     return drivers, classes
+
+@app.callback(
+    Output('race-info', 'children'),
+    Input('stored-race-info', 'data')
+)
+def update_race_info(race_info):
+    if not race_info:
+        return ''
+    
+    race_time = race_info.get('time', '0')
+    race_laps = race_info.get('laps', '0')
+    
+    # Convert to int safely
+    try:
+        time_val = int(race_time)
+        laps_val = int(race_laps)
+    except:
+        time_val = 0
+        laps_val = 0
+    
+    # If race time is in seconds (> 1000), convert to hours
+    if time_val > 1000:
+        hours = time_val // 3600
+        minutes = (time_val % 3600) // 60
+        duration_text = f"⏱️ {hours}h {minutes}min" if minutes > 0 else f"⏱️ {hours} hours"
+    elif time_val > 0:
+        duration_text = f"⏱️ {time_val} minutes"
+    else:
+        duration_text = f"🏁 {laps_val} laps"
+    
+    return html.Div([
+        html.H3('Race Information', style={'marginBottom': '10px'}),
+        html.Div([
+            html.Span(f"📍 {race_info.get('track', 'Unknown')} - {race_info.get('course', 'Unknown')}", style={'marginRight': '20px'}),
+            html.Span(f"📅 {race_info.get('date', 'Unknown')}", style={'marginRight': '20px'}),
+            html.Span(duration_text)
+        ])
+    ])
 
 @app.callback(
     Output('position-chart', 'figure'),
