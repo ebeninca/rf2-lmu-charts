@@ -128,7 +128,11 @@ app.layout = html.Div([
         }
     ),
     
-    html.Div(id='upload-status'),
+    dcc.Loading(
+        id='loading',
+        type='circle',
+        children=html.Div(id='upload-status')
+    ),
     
     html.Div([
         html.Label('Select Drivers:'),
