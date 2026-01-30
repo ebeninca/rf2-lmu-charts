@@ -59,10 +59,24 @@ def parse_xml_scores(content):
     for driver in root.findall('.//Driver'):
         driver_name = driver.find('Name')
         car_class = driver.find('CarClass')
+        grid_pos = driver.find('GridPos')
         
         if driver_name is not None:
             name = driver_name.text
             car_cls = car_class.text if car_class is not None else 'GT3'
+            grid_position = int(grid_pos.text) if grid_pos is not None and grid_pos.text else 0
+            
+            # Add lap 0 with GridPos
+            if grid_position > 0:
+                data.append({
+                    'Driver': name,
+                    'Lap': 0,
+                    'Position': grid_position,
+                    'ET': 0,
+                    'LapTime': 0,
+                    'IsPit': False,
+                    'Class': car_cls
+                })
             
             for lap in driver.findall('.//Lap'):
                 lap_num = int(lap.get('num', 0))
@@ -76,7 +90,7 @@ def parse_xml_scores(content):
                     et = 0
                 lap_time_text = lap.text
                 
-                if lap_num > 0 and position > 0:
+                if lap_num > 0 and position > 0 and position <= 99:
                     lap_time = 0
                     if lap_time_text and lap_time_text.strip() not in ['--.----', '']:
                         try:
