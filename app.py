@@ -57,7 +57,11 @@ app.layout = html.Div([
         dcc.Tab(label='Tires', value='tab-tires')
     ]),
     
-    html.Div(id='tabs-content'),
+    dcc.Loading(
+        id='loading-tabs',
+        type='circle',
+        children=html.Div(id='tabs-content')
+    ),
     
     dcc.Store(id='stored-data', data=initial_df.to_dict('records')),
     dcc.Store(id='stored-race-info', data=initial_race_info)
