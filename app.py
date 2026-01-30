@@ -60,6 +60,7 @@ app.layout = html.Div([
     dcc.Loading(
         id='loading-tabs',
         type='circle',
+        parent_style={'position': 'relative', 'minHeight': '80px'},
         children=html.Div(id='tabs-content')
     ),
     
