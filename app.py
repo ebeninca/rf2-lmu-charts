@@ -97,6 +97,12 @@ def parse_xml_scores(content):
         leader_times.columns = ['Lap', 'LeaderET']
         df = df.merge(leader_times, on='Lap')
         df['GapToLeader'] = df['ET'] - df['LeaderET']
+        
+        # Calculate gap to class leader
+        class_leader_times = df.groupby(['Lap', 'Class'])['ET'].min().reset_index()
+        class_leader_times.columns = ['Lap', 'Class', 'ClassLeaderET']
+        df = df.merge(class_leader_times, on=['Lap', 'Class'])
+        df['GapToClassLeader'] = df['ET'] - df['ClassLeaderET']
     
     return df, race_info
 
@@ -134,6 +140,7 @@ app.layout = html.Div([
     
     dcc.Graph(id='position-chart'),
     dcc.Graph(id='gap-chart'),
+    dcc.Graph(id='class-gap-chart'),
     dcc.Graph(id='laptime-chart'),
     
     dcc.Store(id='stored-data', data=initial_df.to_dict('records')),
@@ -162,18 +169,20 @@ def update_data(contents, filename):
 
 @app.callback(
     [Output('driver-filter', 'options'),
-     Output('class-filter', 'options')],
+     Output('class-filter', 'options'),
+     Output('driver-filter', 'value'),
+     Output('class-filter', 'value')],
     Input('stored-data', 'data')
 )
 def update_filters(data):
     df = pd.DataFrame(data)
     if df.empty:
-        return [], []
+        return [], [], None, None
     
     drivers = [{'label': d, 'value': d} for d in sorted(df['Driver'].unique())]
     classes = [{'label': c, 'value': c} for c in sorted(df['Class'].unique())]
     
-    return drivers, classes
+    return drivers, classes, None, None
 
 @app.callback(
     Output('race-info', 'children'),
@@ -294,6 +303,48 @@ def update_gap_chart(data, selected_drivers, selected_classes):
         title='Gap to Leader by Lap',
         xaxis_title='Lap',
         yaxis_title='Gap to Leader (seconds)',
+        hovermode='closest',
+        height=600
+    )
+    
+    return fig
+
+@app.callback(
+    Output('class-gap-chart', 'figure'),
+    [Input('stored-data', 'data'),
+     Input('driver-filter', 'value'),
+     Input('class-filter', 'value')]
+)
+def update_class_gap_chart(data, selected_drivers, selected_classes):
+    df = pd.DataFrame(data)
+    
+    if df.empty:
+        return go.Figure().add_annotation(text="No data available", showarrow=False)
+    
+    if selected_drivers:
+        df = df[df['Driver'].isin(selected_drivers)]
+    if selected_classes:
+        df = df[df['Class'].isin(selected_classes)]
+    
+    if df.empty:
+        return go.Figure().add_annotation(text="No data available", showarrow=False)
+    
+    fig = go.Figure()
+    
+    for driver in df['Driver'].unique():
+        driver_data = df[df['Driver'] == driver].sort_values('Lap')
+        fig.add_trace(go.Scatter(
+            x=driver_data['Lap'],
+            y=driver_data['GapToClassLeader'],
+            mode='lines+markers',
+            name=driver,
+            hovertemplate='%{fullData.name}<br>Lap: %{x}<br>Gap: %{y:.2f}s<extra></extra>'
+        ))
+    
+    fig.update_layout(
+        title='Gap to Class Leader by Lap',
+        xaxis_title='Lap',
+        yaxis_title='Gap to Class Leader (seconds)',
         hovermode='closest',
         height=600
     )
