@@ -511,3 +511,142 @@ def update_tire_consumption_chart(data, selected_drivers, selected_classes):
     )
     
     return fig
+
+
+def update_tire_degradation_chart(data, selected_drivers, selected_classes):
+    df = pd.DataFrame(data)
+    
+    if df.empty:
+        return go.Figure().add_annotation(text="No data available", showarrow=False)
+    
+    all_data = pd.DataFrame(data)
+    
+    if selected_drivers:
+        df = df[df['Driver'].isin(selected_drivers)]
+    if selected_classes:
+        df = df[df['Class'].isin(selected_classes)]
+    
+    df = df[(df['TireWear'] > 0) & (df['LapTime'] > 0)].copy()
+    
+    if df.empty:
+        return go.Figure().add_annotation(text="No tire or lap time data available", showarrow=False)
+    
+    fig = go.Figure()
+    
+    for driver in df['Driver'].unique():
+        driver_data = all_data[all_data['Driver'] == driver].sort_values('Lap')
+        pit_laps = driver_data[driver_data['IsPit'] == True]['Lap'].values
+        
+        exclude_laps = set()
+        for pit_lap in pit_laps:
+            exclude_laps.add(pit_lap)
+            exclude_laps.add(pit_lap + 1)
+        
+        stints = []
+        current_stint = []
+        
+        for idx, row in driver_data.iterrows():
+            if row['Lap'] in pit_laps:
+                if current_stint:
+                    stints.append(pd.DataFrame(current_stint))
+                current_stint = []
+            elif row['Lap'] not in exclude_laps and row['TireWear'] > 0 and row['LapTime'] > 0:
+                current_stint.append(row)
+        
+        if current_stint:
+            stints.append(pd.DataFrame(current_stint))
+        
+        for stint_idx, stint_df in enumerate(stints):
+            if len(stint_df) < 2:
+                continue
+            
+            if driver not in [d for d in (selected_drivers or [])] and selected_drivers:
+                continue
+            
+            best_lap = stint_df['LapTime'].min()
+            stint_df['Delta'] = stint_df['LapTime'] - best_lap
+            stint_df['TireDeg'] = (1 - stint_df['TireWear']) * 100
+            
+            fig.add_trace(go.Scatter(
+                x=stint_df['TireDeg'],
+                y=stint_df['Delta'],
+                mode='markers+lines',
+                name=f"{driver} - Stint {stint_idx + 1}",
+                hovertemplate='%{fullData.name}<br>Tire Deg: %{x:.1f}%<br>Delta: +%{y:.3f}s<extra></extra>'
+            ))
+    
+    fig.update_layout(
+        title='Lap Time Delta vs Tire Degradation',
+        xaxis_title='Tire Degradation (%)',
+        yaxis_title='Delta to Best Lap (seconds)',
+        hovermode='closest',
+        height=600
+    )
+    
+    return fig
+
+
+def update_consistency_chart(data, selected_drivers, selected_classes):
+    df = pd.DataFrame(data)
+    
+    if df.empty:
+        return go.Figure().add_annotation(text="No data available", showarrow=False)
+    
+    all_data = pd.DataFrame(data)
+    exclude_set = set()
+    for driver in all_data['Driver'].unique():
+        driver_data = all_data[all_data['Driver'] == driver]
+        pit_laps = driver_data[driver_data['IsPit'] == True]['Lap'].values
+        for pit_lap in pit_laps:
+            exclude_set.add((driver, pit_lap))
+            exclude_set.add((driver, pit_lap + 1))
+    
+    if selected_drivers:
+        df = df[df['Driver'].isin(selected_drivers)]
+    if selected_classes:
+        df = df[df['Class'].isin(selected_classes)]
+    
+    df = df[df['LapTime'] > 0].copy()
+    df = df[~df.apply(lambda row: (row['Driver'], row['Lap']) in exclude_set, axis=1)]
+    
+    if df.empty:
+        return go.Figure().add_annotation(text="No lap time data available", showarrow=False)
+    
+    fig = go.Figure()
+    
+    for driver in df['Driver'].unique():
+        driver_data = df[df['Driver'] == driver]['LapTime']
+        
+        if len(driver_data) < 2:
+            continue
+        
+        formatted_times = [f"{int(t//60):01d}:{int(t%60):02d}.{int((t%1)*1000):03d}" for t in driver_data]
+        
+        fig.add_trace(go.Box(
+            y=driver_data,
+            name=driver,
+            boxmean='sd',
+            text=formatted_times,
+            hovertemplate='%{text}<extra></extra>'
+        ))
+    
+    min_time = df['LapTime'].min()
+    max_time = df['LapTime'].max()
+    tick_interval = 5
+    tick_vals = list(range(int(min_time), int(max_time) + tick_interval, tick_interval))
+    tick_texts = [f"{int(t//60):01d}:{int(t%60):02d}.{int((t%1)*1000):03d}" for t in tick_vals]
+    
+    fig.update_layout(
+        title='Lap Time Consistency by Driver',
+        xaxis_title='Driver',
+        yaxis_title='Lap Time',
+        hovermode='closest',
+        height=600,
+        yaxis=dict(
+            tickmode='array',
+            tickvals=tick_vals,
+            ticktext=tick_texts
+        )
+    )
+    
+    return fig

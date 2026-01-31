@@ -28,11 +28,16 @@ def parse_xml_scores(content):
         driver_name = driver.find('Name')
         car_class = driver.find('CarClass')
         grid_pos = driver.find('GridPos')
+        team_name = driver.find('TeamName')
+        car_number = driver.find('CarNumber')
         
         if driver_name is not None:
             name = driver_name.text
             car_cls = car_class.text if car_class is not None else 'GT3'
             grid_position = int(grid_pos.text) if grid_pos is not None and grid_pos.text else 0
+            team = team_name.text if team_name is not None else ''
+            car_num = car_number.text if car_number is not None else ''
+            car_id = f"{team} #{car_num}" if team and car_num else name
             
             # Add lap 0 with GridPos
             if grid_position > 0:
@@ -48,7 +53,8 @@ def parse_xml_scores(content):
                     'VE': 0,
                     'VELevel': 0,
                     'TireWear': 0,
-                    'Class': car_cls
+                    'Class': car_cls,
+                    'Car': car_id
                 })
             
             for lap in driver.findall('.//Lap'):
@@ -122,7 +128,8 @@ def parse_xml_scores(content):
                         'VE': virtual_energy,
                         'VELevel': ve_lvl,
                         'TireWear': tire_wear,
-                        'Class': car_cls
+                        'Class': car_cls,
+                        'Car': car_id
                     })
     
     df = pd.DataFrame(data)

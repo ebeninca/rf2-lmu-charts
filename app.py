@@ -7,7 +7,8 @@ from utils.charts import (
     update_position_chart, update_gap_chart, update_class_gap_chart,
     update_laptime_chart, update_laptime_no_pit_chart,
     update_fuel_chart, update_ve_chart, update_tire_wear_chart,
-    update_fuel_level_chart, update_ve_level_chart, update_tire_consumption_chart
+    update_fuel_level_chart, update_ve_level_chart, update_tire_consumption_chart,
+    update_consistency_chart, update_tire_degradation_chart
 )
 
 app = dash.Dash(__name__)
@@ -148,6 +149,9 @@ app.layout = html.Div([
         
         html.Label('Select Class:'),
         dcc.Dropdown(id='class-filter', multi=True, placeholder='All Classes'),
+        
+        html.Label('Select Car:'),
+        dcc.Dropdown(id='car-filter', multi=True, placeholder='All Cars'),
     ], style={'width': '48%', 'display': 'inline-block', 'padding': '10px'}),
     
     dcc.Tabs(id='tabs', value='tab-position', children=[
@@ -174,32 +178,47 @@ app.layout = html.Div([
     [Input('tabs', 'value'),
      Input('stored-data', 'data'),
      Input('driver-filter', 'value'),
-     Input('class-filter', 'value')]
+     Input('class-filter', 'value'),
+     Input('car-filter', 'value')]
 )
-def render_tab_content(active_tab, data, selected_drivers, selected_classes):
+def render_tab_content(active_tab, data, selected_drivers, selected_classes, selected_cars):
+    df = pd.DataFrame(data)
+    
+    if not df.empty:
+        if selected_drivers:
+            df = df[df['Driver'].isin(selected_drivers)]
+        if selected_classes:
+            df = df[df['Class'].isin(selected_classes)]
+        if selected_cars:
+            df = df[df['Car'].isin(selected_cars)]
+        
+        data = df.to_dict('records')
+    
     if active_tab == 'tab-position':
-        return dcc.Graph(id='position-chart', figure=update_position_chart(data, selected_drivers, selected_classes))
+        return dcc.Graph(id='position-chart', figure=update_position_chart(data, None, None))
     elif active_tab == 'tab-gap':
         return html.Div([
-            dcc.Graph(id='class-gap-chart', figure=update_class_gap_chart(data, selected_drivers, selected_classes)),
-            dcc.Graph(id='gap-chart', figure=update_gap_chart(data, selected_drivers, selected_classes))
+            dcc.Graph(id='class-gap-chart', figure=update_class_gap_chart(data, None, None)),
+            dcc.Graph(id='gap-chart', figure=update_gap_chart(data, None, None))
         ])
     elif active_tab == 'tab-laptimes':
         return html.Div([
-            dcc.Graph(id='laptime-no-pit-chart', figure=update_laptime_no_pit_chart(data, selected_drivers, selected_classes)),
-            dcc.Graph(id='laptime-chart', figure=update_laptime_chart(data, selected_drivers, selected_classes))
+            dcc.Graph(id='laptime-no-pit-chart', figure=update_laptime_no_pit_chart(data, None, None)),
+            dcc.Graph(id='laptime-chart', figure=update_laptime_chart(data, None, None)),
+            dcc.Graph(id='consistency-chart', figure=update_consistency_chart(data, None, None))
         ])
     elif active_tab == 'tab-fuel':
         return html.Div([
-            dcc.Graph(id='fuel-level-chart', figure=update_fuel_level_chart(data, selected_drivers, selected_classes)),
-            dcc.Graph(id='fuel-chart', figure=update_fuel_chart(data, selected_drivers, selected_classes)),
-            dcc.Graph(id='ve-level-chart', figure=update_ve_level_chart(data, selected_drivers, selected_classes)),
-            dcc.Graph(id='ve-chart', figure=update_ve_chart(data, selected_drivers, selected_classes))
+            dcc.Graph(id='fuel-level-chart', figure=update_fuel_level_chart(data, None, None)),
+            dcc.Graph(id='fuel-chart', figure=update_fuel_chart(data, None, None)),
+            dcc.Graph(id='ve-level-chart', figure=update_ve_level_chart(data, None, None)),
+            dcc.Graph(id='ve-chart', figure=update_ve_chart(data, None, None))
         ])
     elif active_tab == 'tab-tires':
         return html.Div([
-            dcc.Graph(id='tire-wear-chart', figure=update_tire_wear_chart(data, selected_drivers, selected_classes)),
-            dcc.Graph(id='tire-consumption-chart', figure=update_tire_consumption_chart(data, selected_drivers, selected_classes))
+            dcc.Graph(id='tire-wear-chart', figure=update_tire_wear_chart(data, None, None)),
+            dcc.Graph(id='tire-consumption-chart', figure=update_tire_consumption_chart(data, None, None)),
+            dcc.Graph(id='tire-degradation-chart', figure=update_tire_degradation_chart(data, None, None))
         ])
 
 @app.callback(
@@ -225,19 +244,22 @@ def update_data(contents, filename):
 @app.callback(
     [Output('driver-filter', 'options'),
      Output('class-filter', 'options'),
+     Output('car-filter', 'options'),
      Output('driver-filter', 'value'),
-     Output('class-filter', 'value')],
+     Output('class-filter', 'value'),
+     Output('car-filter', 'value')],
     Input('stored-data', 'data')
 )
 def update_filters(data):
     df = pd.DataFrame(data)
     if df.empty:
-        return [], [], None, None
+        return [], [], [], None, None, None
     
     drivers = [{'label': d, 'value': d} for d in sorted(df['Driver'].unique())]
     classes = [{'label': c, 'value': c} for c in sorted(df['Class'].unique())]
+    cars = [{'label': c, 'value': c} for c in sorted(df['Car'].unique())]
     
-    return drivers, classes, None, None
+    return drivers, classes, cars, None, None, None
 
 @app.callback(
     Output('race-info', 'children'),
