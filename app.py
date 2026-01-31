@@ -56,14 +56,16 @@ app.index_string = '''
                 background: #0056b3;
             }
             .theme-toggle::before {
-                content: '☀️';
-                font-size: 16px;
+                content: '☀';
+                font-size: 18px;
                 z-index: 1;
+                margin-left: 1px;
             }
             .theme-toggle::after {
-                content: '🌙';
-                font-size: 16px;
+                content: '☾';
+                font-size: 18px;
                 z-index: 1;
+                margin-right: 4px;
             }
             .theme-toggle-slider {
                 position: absolute;
