@@ -6,6 +6,28 @@ def parse_xml_scores(content):
     root = ET.fromstring(content)
     data = []
     race_info = {}
+    incidents = {'chat': [], 'incident': [], 'penalty': []}
+    
+    # Extract chat messages
+    for chat in root.findall('.//Chat'):
+        incidents['chat'].append({
+            'et': chat.get('et', '0'),
+            'message': chat.text or ''
+        })
+    
+    # Extract incidents
+    for incident in root.findall('.//Incident'):
+        incidents['incident'].append({
+            'et': incident.get('et', '0'),
+            'message': incident.text or ''
+        })
+    
+    # Extract penalties
+    for penalty in root.findall('.//Penalty'):
+        incidents['penalty'].append({
+            'et': penalty.get('et', '0'),
+            'message': penalty.text or ''
+        })
     
     # Extract race information
     race_results = root.find('.//RaceResults')
@@ -15,13 +37,29 @@ def parse_xml_scores(content):
         race_info['date'] = race_results.find('TimeString')
         race_info['laps'] = race_results.find('RaceLaps')
         race_info['time'] = race_results.find('RaceTime')
+        race_info['server'] = race_results.find('ServerName')
+        race_info['track_length'] = race_results.find('TrackLength')
+        race_info['mech_fail'] = race_results.find('MechFailRate')
+        race_info['damage_mult'] = race_results.find('DamageMult')
+        race_info['fuel_mult'] = race_results.find('FuelMult')
+        race_info['tire_mult'] = race_results.find('TireMult')
+        race_info['tire_warmers'] = race_results.find('TireWarmers')
+        race_info['game_version'] = race_results.find('GameVersion')
         
         race_info = {
             'track': race_info['track'].text if race_info['track'] is not None else 'Unknown',
             'course': race_info['course'].text if race_info['course'] is not None else 'Unknown',
             'date': race_info['date'].text if race_info['date'] is not None else 'Unknown',
             'laps': race_info['laps'].text if race_info['laps'] is not None else '0',
-            'time': race_info['time'].text if race_info['time'] is not None else '0'
+            'time': race_info['time'].text if race_info['time'] is not None else '0',
+            'server': race_info['server'].text if race_info['server'] is not None else 'Unknown',
+            'track_length': race_info['track_length'].text if race_info['track_length'] is not None else '0',
+            'mech_fail': race_info['mech_fail'].text if race_info['mech_fail'] is not None else '0',
+            'damage_mult': race_info['damage_mult'].text if race_info['damage_mult'] is not None else '0',
+            'fuel_mult': race_info['fuel_mult'].text if race_info['fuel_mult'] is not None else '0',
+            'tire_mult': race_info['tire_mult'].text if race_info['tire_mult'] is not None else '0',
+            'tire_warmers': race_info['tire_warmers'].text if race_info['tire_warmers'] is not None else '0',
+            'game_version': race_info['game_version'].text if race_info['game_version'] is not None else 'Unknown'
         }
     
     for driver in root.findall('.//Driver'):
@@ -30,6 +68,8 @@ def parse_xml_scores(content):
         grid_pos = driver.find('GridPos')
         team_name = driver.find('TeamName')
         car_number = driver.find('CarNumber')
+        veh_name = driver.find('VehName')
+        car_type = driver.find('CarType')
         
         if driver_name is not None:
             name = driver_name.text
@@ -38,6 +78,8 @@ def parse_xml_scores(content):
             team = team_name.text if team_name is not None else ''
             car_num = car_number.text if car_number is not None else ''
             car_id = f"{team} #{car_num}" if team and car_num else name
+            vehicle_name = veh_name.text if veh_name is not None else ''
+            vehicle_type = car_type.text if car_type is not None else ''
             
             # Add lap 0 with GridPos
             if grid_position > 0:
@@ -54,7 +96,9 @@ def parse_xml_scores(content):
                     'VELevel': 0,
                     'TireWear': 0,
                     'Class': car_cls,
-                    'Car': car_id
+                    'Car': car_id,
+                    'VehName': vehicle_name,
+                    'CarType': vehicle_type
                 })
             
             for lap in driver.findall('.//Lap'):
@@ -129,7 +173,9 @@ def parse_xml_scores(content):
                         'VELevel': ve_lvl,
                         'TireWear': tire_wear,
                         'Class': car_cls,
-                        'Car': car_id
+                        'Car': car_id,
+                        'VehName': vehicle_name,
+                        'CarType': vehicle_type
                     })
     
     df = pd.DataFrame(data)
@@ -144,4 +190,4 @@ def parse_xml_scores(content):
         df = df.merge(class_leader_times, on=['Lap', 'Class'])
         df['GapToClassLeader'] = df['ET'] - df['ClassLeaderET']
     
-    return df, race_info
+    return df, race_info, incidents
