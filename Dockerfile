@@ -7,6 +7,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app.py .
 COPY utils/ ./utils/
+COPY assets/ ./assets/
 
 EXPOSE 7860
 
