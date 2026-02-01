@@ -40,6 +40,9 @@ app.layout = html.Div([
         }
     ),
     
+    html.P('🔒 Your data is not stored or persisted on the server - processed in memory only', 
+           style={'textAlign': 'center', 'fontSize': '12px', 'color': '#666', 'fontStyle': 'italic', 'margin': '5px 0 15px 0'}),
+    
     dcc.Loading(
         id='loading',
         type='circle',
@@ -207,9 +210,15 @@ def update_data(contents, filename):
     
     try:
         df, race_info, incidents = parse_xml_scores(decoded.decode('utf-8'))
-        return df.to_dict('records'), race_info, incidents, html.Div(f'✓ {filename} loaded', style={'color': 'green'})
+        return df.to_dict('records'), race_info, incidents, html.Div([
+            html.Span('✅ ', style={'fontSize': '16px'}),
+            html.Span(f'{filename} loaded successfully!', style={'color': '#28a745', 'fontWeight': 'bold'})
+        ], style={'textAlign': 'center', 'padding': '10px', 'backgroundColor': '#d4edda', 'border': '1px solid #c3e6cb', 'borderRadius': '5px', 'margin': '10px'})
     except Exception as e:
-        return initial_df.to_dict('records'), initial_race_info, initial_incidents, html.Div(f'✗ Error: {str(e)}', style={'color': 'red'})
+        return initial_df.to_dict('records'), initial_race_info, initial_incidents, html.Div([
+            html.Span('❌ ', style={'fontSize': '16px'}),
+            html.Span(f'Error loading {filename}: {str(e)}', style={'color': '#dc3545', 'fontWeight': 'bold'})
+        ], style={'textAlign': 'center', 'padding': '10px', 'backgroundColor': '#f8d7da', 'border': '1px solid #f5c6cb', 'borderRadius': '5px', 'margin': '10px'})
 
 @app.callback(
     [Output('driver-filter', 'options'),
