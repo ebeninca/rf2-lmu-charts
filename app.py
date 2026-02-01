@@ -52,22 +52,28 @@ app.layout = html.Div([
     html.Div([
         html.Div([
             html.Label('Select Drivers:', style={'fontSize': '12px', 'marginBottom': '2px'}),
-            dcc.Dropdown(id='driver-filter', multi=True, placeholder='All Drivers', style={'fontSize': '12px'}),
-            
-            html.Label('Select Class:', style={'fontSize': '12px', 'marginBottom': '2px', 'marginTop': '8px'}),
-            dcc.Dropdown(id='class-filter', multi=True, placeholder='All Classes', style={'fontSize': '12px'}),
-            
-            html.Label('Select Team:', style={'fontSize': '12px', 'marginBottom': '2px', 'marginTop': '8px'}),
-            dcc.Dropdown(id='car-filter', multi=True, placeholder='All Teams', style={'fontSize': '12px'}),
-        ], style={'width': '48%', 'display': 'inline-block', 'verticalAlign': 'top', 'padding': '10px'}),
+            dcc.Dropdown(id='driver-filter', multi=True, placeholder='All Drivers', style={'fontSize': '12px', 'minWidth': '200px'}),
+        ], style={'display': 'inline-block', 'verticalAlign': 'top', 'padding': '10px'}),
+        
+        html.Div([
+            html.Label('Select Class:', style={'fontSize': '12px', 'marginBottom': '2px'}),
+            dcc.Dropdown(id='class-filter', multi=True, placeholder='All Classes', style={'fontSize': '12px', 'minWidth': '200px'}),
+        ], style={'display': 'inline-block', 'verticalAlign': 'top', 'padding': '10px'}),
+        
+        html.Div([
+            html.Label('Select Team:', style={'fontSize': '12px', 'marginBottom': '2px'}),
+            dcc.Dropdown(id='car-filter', multi=True, placeholder='All Teams', style={'fontSize': '12px', 'minWidth': '200px'}),
+        ], style={'display': 'inline-block', 'verticalAlign': 'top', 'padding': '10px'}),
         
         html.Div([
             html.Label('Select Vehicle:', style={'fontSize': '12px', 'marginBottom': '2px'}),
-            dcc.Dropdown(id='veh-filter', multi=True, placeholder='All Vehicles', style={'fontSize': '12px'}),
-            
-            html.Label('Select Car Type:', style={'fontSize': '12px', 'marginBottom': '2px', 'marginTop': '8px'}),
-            dcc.Dropdown(id='cartype-filter', multi=True, placeholder='All Car Types', style={'fontSize': '12px'}),
-        ], style={'width': '48%', 'display': 'inline-block', 'verticalAlign': 'top', 'padding': '10px'}),
+            dcc.Dropdown(id='veh-filter', multi=True, placeholder='All Vehicles', style={'fontSize': '12px', 'minWidth': '200px'}),
+        ], style={'display': 'inline-block', 'verticalAlign': 'top', 'padding': '10px'}),
+        
+        html.Div([
+            html.Label('Select Car Type:', style={'fontSize': '12px', 'marginBottom': '2px'}),
+            dcc.Dropdown(id='cartype-filter', multi=True, placeholder='All Car Types', style={'fontSize': '12px', 'minWidth': '200px'}),
+        ], style={'display': 'inline-block', 'verticalAlign': 'top', 'padding': '10px'}),
     ]),
     
     dcc.Tabs(id='tabs', value='tab-standings', children=[
@@ -213,7 +219,12 @@ def update_data(contents, filename):
         return df.to_dict('records'), race_info, incidents, html.Div([
             html.Span('✅ ', style={'fontSize': '16px'}),
             html.Span(f'{filename} loaded successfully!', style={'color': '#28a745', 'fontWeight': 'bold'})
-        ], style={'textAlign': 'center', 'padding': '10px', 'backgroundColor': '#d4edda', 'border': '1px solid #c3e6cb', 'borderRadius': '5px', 'margin': '10px'})
+        ], id='success-message', style={
+            'position': 'fixed', 'top': '20px', 'right': '20px', 'zIndex': '9999',
+            'textAlign': 'center', 'padding': '10px 15px', 'backgroundColor': '#d4edda', 
+            'border': '1px solid #c3e6cb', 'borderRadius': '5px', 'boxShadow': '0 4px 8px rgba(0,0,0,0.2)',
+            'animation': 'fadeOut 0.5s ease-in-out 3s forwards'
+        })
     except Exception as e:
         return initial_df.to_dict('records'), initial_race_info, initial_incidents, html.Div([
             html.Span('❌ ', style={'fontSize': '16px'}),

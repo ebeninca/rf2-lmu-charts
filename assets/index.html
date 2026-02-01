@@ -67,6 +67,10 @@
             .theme-toggle.active .theme-toggle-slider {
                 transform: translate(30px, -50%);
             }
+            @keyframes fadeOut {
+                0% { opacity: 1; }
+                100% { opacity: 0; visibility: hidden; }
+            }
         </style>
         <script>
             function toggleTheme() {
@@ -95,3 +99,28 @@
         </footer>
     </body>
 </html>
+<script>
+// Auto-hide success message after 3 seconds
+document.addEventListener('DOMContentLoaded', function() {
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            mutation.addedNodes.forEach(function(node) {
+                if (node.id === 'success-message') {
+                    setTimeout(function() {
+                        if (node.parentNode) {
+                            node.style.opacity = '0';
+                            node.style.transition = 'opacity 0.5s';
+                            setTimeout(function() {
+                                if (node.parentNode) {
+                                    node.parentNode.removeChild(node);
+                                }
+                            }, 500);
+                        }
+                    }, 3000);
+                }
+            });
+        });
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+});
+</script>
