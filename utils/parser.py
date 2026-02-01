@@ -71,6 +71,10 @@ def parse_xml_scores(content):
         veh_name = driver.find('VehName')
         car_type = driver.find('CarType')
         
+        # Extract ControlAndAids
+        control_aids = driver.find('ControlAndAids')
+        aids_text = control_aids.text if control_aids is not None else ''
+        
         if driver_name is not None:
             name = driver_name.text
             car_cls = car_class.text if car_class is not None else 'GT3'
@@ -80,6 +84,19 @@ def parse_xml_scores(content):
             car_id = f"{team} #{car_num}" if team and car_num else name
             vehicle_name = veh_name.text if veh_name is not None else ''
             vehicle_type = car_type.text if car_type is not None else ''
+            
+            # Parse aids
+            aids_list = []
+            if aids_text:
+                for aid in aids_text.split(','):
+                    aid = aid.strip()
+                    if 'Clutch' in aid:
+                        aids_list.append('C')
+                    elif 'AutoBlip' in aid:
+                        aids_list.append('B')
+                    elif 'AutoLift' in aid:
+                        aids_list.append('L')
+            aids_display = '/'.join(aids_list) if aids_list else '-'
             
             # Add lap 0 with GridPos
             if grid_position > 0:
@@ -98,7 +115,10 @@ def parse_xml_scores(content):
                     'Class': car_cls,
                     'Car': car_id,
                     'VehName': vehicle_name,
-                    'CarType': vehicle_type
+                    'CarType': vehicle_type,
+                    'FCompound': '',
+                    'RCompound': '',
+                    'Aids': aids_display
                 })
             
             for lap in driver.findall('.//Lap'):
@@ -114,6 +134,8 @@ def parse_xml_scores(content):
                 twfr = lap.get('twfr', '0')
                 twrl = lap.get('twrl', '0')
                 twrr = lap.get('twrr', '0')
+                fcompound = lap.get('fcompound', '')
+                rcompound = lap.get('rcompound', '')
                 
                 try:
                     et = float(et_text) if et_text else 0
@@ -175,7 +197,10 @@ def parse_xml_scores(content):
                         'Class': car_cls,
                         'Car': car_id,
                         'VehName': vehicle_name,
-                        'CarType': vehicle_type
+                        'CarType': vehicle_type,
+                        'FCompound': fcompound,
+                        'RCompound': rcompound,
+                        'Aids': aids_display
                     })
     
     df = pd.DataFrame(data)
