@@ -60,20 +60,41 @@ def update_gap_chart(data, selected_drivers, selected_classes):
     
     for driver in df['Driver'].unique():
         driver_data = df[df['Driver'] == driver].sort_values('Lap')
+        
+        # Format gap times as mm:ss.sss
+        formatted_gaps = []
+        for gap in driver_data['GapToLeader']:
+            minutes = int(gap // 60)
+            seconds = gap % 60
+            formatted_gaps.append(f"{minutes}:{seconds:06.3f}")
+        
         fig.add_trace(go.Scatter(
             x=driver_data['Lap'],
             y=driver_data['GapToLeader'],
             mode='lines+markers',
             name=driver,
-            hovertemplate='%{fullData.name}<br>Lap: %{x}<br>Gap: %{y:.2f}s<extra></extra>'
+            text=formatted_gaps,
+            hovertemplate='%{fullData.name}<br>Lap: %{x}<br>Gap: %{text}<extra></extra>'
         ))
+    
+    # Format y-axis ticks as mm:ss
+    min_gap = df['GapToLeader'].min()
+    max_gap = df['GapToLeader'].max()
+    tick_interval = 30  # 30 seconds
+    tick_vals = list(range(int(min_gap), int(max_gap) + tick_interval, tick_interval))
+    tick_texts = [f"{int(t//60):01d}:{int(t%60):02d}" for t in tick_vals]
     
     fig.update_layout(
         title='Gap to Leader by Lap',
         xaxis_title='Lap',
-        yaxis_title='Gap to Leader (seconds)',
+        yaxis_title='Gap to Leader',
         hovermode='closest',
-        height=600
+        height=600,
+        yaxis=dict(
+            tickmode='array',
+            tickvals=tick_vals,
+            ticktext=tick_texts
+        )
     )
     
     return fig
@@ -97,20 +118,41 @@ def update_class_gap_chart(data, selected_drivers, selected_classes):
     
     for driver in df['Driver'].unique():
         driver_data = df[df['Driver'] == driver].sort_values('Lap')
+        
+        # Format gap times as mm:ss.sss
+        formatted_gaps = []
+        for gap in driver_data['GapToClassLeader']:
+            minutes = int(gap // 60)
+            seconds = gap % 60
+            formatted_gaps.append(f"{minutes}:{seconds:06.3f}")
+        
         fig.add_trace(go.Scatter(
             x=driver_data['Lap'],
             y=driver_data['GapToClassLeader'],
             mode='lines+markers',
             name=driver,
-            hovertemplate='%{fullData.name}<br>Lap: %{x}<br>Gap: %{y:.2f}s<extra></extra>'
+            text=formatted_gaps,
+            hovertemplate='%{fullData.name}<br>Lap: %{x}<br>Gap: %{text}<extra></extra>'
         ))
+    
+    # Format y-axis ticks as mm:ss
+    min_gap = df['GapToClassLeader'].min()
+    max_gap = df['GapToClassLeader'].max()
+    tick_interval = 30  # 30 seconds
+    tick_vals = list(range(int(min_gap), int(max_gap) + tick_interval, tick_interval))
+    tick_texts = [f"{int(t//60):01d}:{int(t%60):02d}" for t in tick_vals]
     
     fig.update_layout(
         title='Gap to Class Leader by Lap',
         xaxis_title='Lap',
-        yaxis_title='Gap to Class Leader (seconds)',
+        yaxis_title='Gap to Class Leader',
         hovermode='closest',
-        height=600
+        height=600,
+        yaxis=dict(
+            tickmode='array',
+            tickvals=tick_vals,
+            ticktext=tick_texts
+        )
     )
     
     return fig

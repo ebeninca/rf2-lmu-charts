@@ -105,7 +105,13 @@ app.layout = html.Div([
 def render_tab_content(active_tab, data, selected_drivers, selected_classes, selected_cars, selected_veh, selected_cartype, incidents, stored_lap):
     df = pd.DataFrame(data)
     
-    if not df.empty:
+    if active_tab == 'tab-standings':
+        # For standings, only apply class filter
+        if selected_classes:
+            df = df[df['Class'].isin(selected_classes)]
+        data = df.to_dict('records')
+    elif not df.empty:
+        # For other tabs, apply all filters
         if selected_drivers:
             df = df[df['Driver'].isin(selected_drivers)]
         if selected_classes:
@@ -116,7 +122,6 @@ def render_tab_content(active_tab, data, selected_drivers, selected_classes, sel
             df = df[df['VehName'].isin(selected_veh)]
         if selected_cartype:
             df = df[df['CarType'].isin(selected_cartype)]
-        
         data = df.to_dict('records')
     
     if active_tab == 'tab-standings':
@@ -131,6 +136,10 @@ def render_tab_content(active_tab, data, selected_drivers, selected_classes, sel
         selected_lap = stored_lap if stored_lap is not None and stored_lap <= max_lap else max_lap
         
         return html.Div([
+            html.Div([
+                html.P('ℹ️ Only Class filter affects Standings', 
+                       style={'fontSize': '12px', 'color': '#666', 'fontStyle': 'italic', 'margin': '0 0 15px 0'})
+            ]),
             html.Label('Select Lap:', style={'fontSize': '14px', 'fontWeight': 'bold', 'marginBottom': '10px'}),
             dcc.Dropdown(id='standings-lap-selector', options=lap_options, value=selected_lap, style={'width': '200px', 'marginBottom': '20px'}),
             dcc.Store(id='standings-filtered-data', data=data),
