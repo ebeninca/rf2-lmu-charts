@@ -86,7 +86,8 @@ app.layout = html.Div([
     
     dcc.Store(id='stored-data', data=initial_df.to_dict('records')),
     dcc.Store(id='stored-race-info', data=initial_race_info),
-    dcc.Store(id='stored-incidents', data=initial_incidents)
+    dcc.Store(id='stored-incidents', data=initial_incidents),
+    dcc.Store(id='standings-lap-store')
 ])
 
 @app.callback(
@@ -98,9 +99,10 @@ app.layout = html.Div([
      Input('car-filter', 'value'),
      Input('veh-filter', 'value'),
      Input('cartype-filter', 'value'),
-     Input('stored-incidents', 'data')]
+     Input('stored-incidents', 'data')],
+    [State('standings-lap-store', 'data')]
 )
-def render_tab_content(active_tab, data, selected_drivers, selected_classes, selected_cars, selected_veh, selected_cartype, incidents):
+def render_tab_content(active_tab, data, selected_drivers, selected_classes, selected_cars, selected_veh, selected_cartype, incidents, stored_lap):
     df = pd.DataFrame(data)
     
     if not df.empty:
@@ -125,9 +127,12 @@ def render_tab_content(active_tab, data, selected_drivers, selected_classes, sel
         max_lap = int(all_df['Lap'].max())
         lap_options = [{'label': f'Lap {i}', 'value': i} for i in range(0, max_lap + 1)]
         
+        # Use stored lap if available and valid, otherwise use max_lap
+        selected_lap = stored_lap if stored_lap is not None and stored_lap <= max_lap else max_lap
+        
         return html.Div([
             html.Label('Select Lap:', style={'fontSize': '14px', 'fontWeight': 'bold', 'marginBottom': '10px'}),
-            dcc.Dropdown(id='standings-lap-selector', options=lap_options, value=max_lap, style={'width': '200px', 'marginBottom': '20px'}),
+            dcc.Dropdown(id='standings-lap-selector', options=lap_options, value=selected_lap, style={'width': '200px', 'marginBottom': '20px'}),
             dcc.Store(id='standings-filtered-data', data=data),
             html.Div(id='standings-table')
         ], style={'padding': '20px'})
@@ -319,6 +324,13 @@ def render_events_content(active_events_tab, incidents):
         ], style=table_style)
 
 @app.callback(
+    Output('standings-lap-store', 'data'),
+    Input('standings-lap-selector', 'value')
+)
+def store_selected_lap(selected_lap):
+    return selected_lap
+
+@app.callback(
     Output('standings-table', 'children'),
     [Input('standings-lap-selector', 'value'),
      Input('standings-filtered-data', 'data')]
@@ -346,9 +358,9 @@ def update_standings_table(selected_lap, data):
     # Assign positions based on correct order
     lap_df['OriginalPosition'] = range(1, len(lap_df) + 1)
     
-    # Calculate positions gained/lost
+    # Calculate positions gained/lost using the corrected position
     initial_pos = df[df['Lap'] == 0].set_index('Driver')['Position'].to_dict()
-    lap_df['Up'] = lap_df.apply(lambda row: initial_pos.get(row['Driver'], row['Position']) - row['Position'], axis=1)
+    lap_df['Up'] = lap_df.apply(lambda row: initial_pos.get(row['Driver'], row['OriginalPosition']) - row['OriginalPosition'], axis=1)
     
     # Calculate best lap per driver up to selected lap
     best_laps = df[(df['LapTime'] > 0) & (df['Lap'] <= selected_lap)].groupby('Driver')['LapTime'].min().to_dict()
@@ -371,12 +383,17 @@ def update_standings_table(selected_lap, data):
             return 'Leader'
         laps_behind = leader_lap - row['Lap']
         time_gap = row['ET'] - leader_et
-        if laps_behind >= 1:
+        
+        # Only use lap format on the last lap of the race
+        if selected_lap == df['Lap'].max() and laps_behind >= 1:
             minutes = int(abs(time_gap) // 60)
             seconds = abs(time_gap) % 60
             return f"+{laps_behind}L {minutes}:{seconds:06.3f}"
         else:
-            return f"+{abs(time_gap):.3f}s"
+            # Format as mm:ss.sss for all other laps
+            minutes = int(abs(time_gap) // 60)
+            seconds = abs(time_gap) % 60
+            return f"+{minutes}:{seconds:06.3f}"
     
     lap_df['Gap'] = lap_df.apply(calculate_gap, axis=1)
     
