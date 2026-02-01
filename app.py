@@ -100,9 +100,18 @@ app.layout = html.Div([
      Input('veh-filter', 'value'),
      Input('cartype-filter', 'value'),
      Input('stored-incidents', 'data')],
-    [State('standings-lap-store', 'data')]
+    [State('standings-lap-store', 'data')],
+    prevent_initial_call=False
 )
 def render_tab_content(active_tab, data, selected_drivers, selected_classes, selected_cars, selected_veh, selected_cartype, incidents, stored_lap):
+    ctx = dash.callback_context
+    
+    # If we're on standings tab and only non-class filters changed, don't update
+    if active_tab == 'tab-standings' and ctx.triggered:
+        trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
+        if trigger_id in ['driver-filter', 'car-filter', 'veh-filter', 'cartype-filter']:
+            raise dash.exceptions.PreventUpdate
+    
     df = pd.DataFrame(data)
     
     if active_tab == 'tab-standings':
