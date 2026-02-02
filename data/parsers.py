@@ -147,29 +147,46 @@ def parse_xml_scores(content):
                 fcompound = lap.get('fcompound', '')
                 rcompound = lap.get('rcompound', '')
                 
+                # Validate ET value
                 try:
-                    et = float(et_text) if et_text else 0
-                except:
+                    et = float(et_text) if et_text and et_text not in ['--.---', '', 'None'] else 0
+                    # Sanity check - ET should be non-negative and reasonable
+                    if et < 0 or et > 86400:  # Max 24 hours
+                        et = 0
+                except (ValueError, TypeError):
                     et = 0
                 lap_time_text = lap.text
                 
                 if lap_num > 0 and position > 0 and position <= 99:
+                    # Validate and clean lap time
                     lap_time = 0
-                    if lap_time_text and lap_time_text.strip() not in ['--.----', '']:
+                    if lap_time_text and lap_time_text.strip() not in ['--.----', '', 'None']:
                         try:
                             lap_time = float(lap_time_text)
-                        except:
+                            # Sanity check - lap times should be positive
+                            if lap_time < 0:
+                                lap_time = 0
+                        except (ValueError, TypeError):
                             lap_time = 0
                     
+                    # Handle fuel consumption calculation
                     try:
-                        fuel = float(fuel_used) if fuel_used else 0
-                    except:
+                        fuel = float(fuel_used) if fuel_used and fuel_used != '0' else 0
+                    except (ValueError, TypeError):
                         fuel = 0
                     
                     try:
                         fuel_lvl = float(fuel_level) if fuel_level else 0
-                    except:
+                    except (ValueError, TypeError):
                         fuel_lvl = 0
+                    
+                    # If fuelUsed is not available or is 0, calculate from previous lap
+                    if fuel == 0 and fuel_lvl > 0:
+                        # Find previous lap for this driver
+                        prev_lap_data = [d for d in data if d['Driver'] == name and d['Lap'] == lap_num - 1]
+                        if prev_lap_data and prev_lap_data[0]['FuelLevel'] > 0:
+                            prev_fuel_level = prev_lap_data[0]['FuelLevel']
+                            fuel = max(0, prev_fuel_level - fuel_lvl)  # Ensure non-negative
                     
                     try:
                         virtual_energy = float(ve) if ve else 0
@@ -215,6 +232,29 @@ def parse_xml_scores(content):
     
     df = pd.DataFrame(data)
     if not df.empty:
+        # Clean any NaN or infinite values that could cause DOM issues
+        df = df.replace([float('inf'), float('-inf')], 0)
+        df = df.fillna(0)
+        
+        # Ensure all numeric columns are properly typed
+        numeric_columns = ['Lap', 'Position', 'ET', 'LapTime', 'FuelUsed', 'FuelLevel', 'VE', 'VELevel', 'TireWear']
+        for col in numeric_columns:
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+        
+        # Calculate FuelUsed for rows where it's 0 but we have fuel level data
+        for driver in df['Driver'].unique():
+            driver_data = df[df['Driver'] == driver].sort_values('Lap')
+            for i in range(1, len(driver_data)):
+                current_idx = driver_data.iloc[i].name
+                prev_idx = driver_data.iloc[i-1].name
+                
+                if (df.loc[current_idx, 'FuelUsed'] == 0 and 
+                    df.loc[current_idx, 'FuelLevel'] > 0 and 
+                    df.loc[prev_idx, 'FuelLevel'] > 0):
+                    fuel_used = max(0, df.loc[prev_idx, 'FuelLevel'] - df.loc[current_idx, 'FuelLevel'])
+                    df.loc[current_idx, 'FuelUsed'] = fuel_used
+        
         leader_times = df.groupby('Lap')['ET'].min().reset_index()
         leader_times.columns = ['Lap', 'LeaderET']
         df = df.merge(leader_times, on='Lap')
