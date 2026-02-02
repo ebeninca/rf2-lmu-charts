@@ -51,28 +51,28 @@ app.layout = html.Div([
     
     html.Div([
         html.Div([
-            html.Label('Select Drivers:', style={'fontSize': '12px', 'marginBottom': '2px'}),
-            dcc.Dropdown(id='driver-filter', multi=True, placeholder='All Drivers', style={'fontSize': '12px', 'minWidth': '200px'}),
+            html.Label('Select Class:', style={'fontSize': '12px', 'marginBottom': '2px'}),
+            dcc.Dropdown(id='class-filter', multi=True, placeholder='All Classes', style={'fontSize': '12px', 'minWidth': '220px'}),
         ], style={'display': 'inline-block', 'verticalAlign': 'top', 'padding': '10px'}),
         
         html.Div([
-            html.Label('Select Class:', style={'fontSize': '12px', 'marginBottom': '2px'}),
-            dcc.Dropdown(id='class-filter', multi=True, placeholder='All Classes', style={'fontSize': '12px', 'minWidth': '200px'}),
+            html.Label('Select Drivers:', style={'fontSize': '12px', 'marginBottom': '2px'}),
+            dcc.Dropdown(id='driver-filter', multi=True, placeholder='All Drivers', style={'fontSize': '12px', 'minWidth': '220px'}),
         ], style={'display': 'inline-block', 'verticalAlign': 'top', 'padding': '10px'}),
         
         html.Div([
             html.Label('Select Team:', style={'fontSize': '12px', 'marginBottom': '2px'}),
-            dcc.Dropdown(id='car-filter', multi=True, placeholder='All Teams', style={'fontSize': '12px', 'minWidth': '200px'}),
+            dcc.Dropdown(id='car-filter', multi=True, placeholder='All Teams', style={'fontSize': '12px', 'minWidth': '220px'}),
         ], style={'display': 'inline-block', 'verticalAlign': 'top', 'padding': '10px'}),
         
         html.Div([
             html.Label('Select Vehicle:', style={'fontSize': '12px', 'marginBottom': '2px'}),
-            dcc.Dropdown(id='veh-filter', multi=True, placeholder='All Vehicles', style={'fontSize': '12px', 'minWidth': '200px'}),
+            dcc.Dropdown(id='veh-filter', multi=True, placeholder='All Vehicles', style={'fontSize': '12px', 'minWidth': '220px'}),
         ], style={'display': 'inline-block', 'verticalAlign': 'top', 'padding': '10px'}),
         
         html.Div([
             html.Label('Select Car Type:', style={'fontSize': '12px', 'marginBottom': '2px'}),
-            dcc.Dropdown(id='cartype-filter', multi=True, placeholder='All Car Types', style={'fontSize': '12px', 'minWidth': '200px'}),
+            dcc.Dropdown(id='cartype-filter', multi=True, placeholder='All Car Types', style={'fontSize': '12px', 'minWidth': '220px'}),
         ], style={'display': 'inline-block', 'verticalAlign': 'top', 'padding': '10px'}),
     ]),
     
@@ -103,8 +103,8 @@ app.layout = html.Div([
     Output('tabs-content', 'children'),
     [Input('tabs', 'value'),
      Input('stored-data', 'data'),
-     Input('driver-filter', 'value'),
      Input('class-filter', 'value'),
+     Input('driver-filter', 'value'),
      Input('car-filter', 'value'),
      Input('veh-filter', 'value'),
      Input('cartype-filter', 'value'),
@@ -112,7 +112,7 @@ app.layout = html.Div([
     [State('standings-lap-store', 'data')],
     prevent_initial_call=False
 )
-def render_tab_content(active_tab, data, selected_drivers, selected_classes, selected_cars, selected_veh, selected_cartype, incidents, stored_lap):
+def render_tab_content(active_tab, data, selected_classes, selected_drivers, selected_cars, selected_veh, selected_cartype, incidents, stored_lap):
     ctx = dash.callback_context
     
     # If we're on standings tab and only non-class filters changed, don't update
@@ -232,13 +232,13 @@ def update_data(contents, filename):
         ], style={'textAlign': 'center', 'padding': '10px', 'backgroundColor': '#f8d7da', 'border': '1px solid #f5c6cb', 'borderRadius': '5px', 'margin': '10px'})
 
 @app.callback(
-    [Output('driver-filter', 'options'),
-     Output('class-filter', 'options'),
+    [Output('class-filter', 'options'),
+     Output('driver-filter', 'options'),
      Output('car-filter', 'options'),
      Output('veh-filter', 'options'),
      Output('cartype-filter', 'options'),
-     Output('driver-filter', 'value'),
      Output('class-filter', 'value'),
+     Output('driver-filter', 'value'),
      Output('car-filter', 'value'),
      Output('veh-filter', 'value'),
      Output('cartype-filter', 'value')],
@@ -255,7 +255,7 @@ def update_filters(data):
     vehs = [{'label': v, 'value': v} for v in sorted(df['VehName'].unique()) if v]
     cartypes = [{'label': ct, 'value': ct} for ct in sorted(df['CarType'].unique()) if ct]
     
-    return drivers, classes, cars, vehs, cartypes, None, None, None, None, None
+    return classes, drivers, cars, vehs, cartypes, None, None, None, None, None
 
 @app.callback(
     Output('race-info', 'children'),
@@ -482,7 +482,7 @@ def update_standings_table(selected_lap, data):
             html.Th('Led', style=th_style),
             html.Th('Pits', style=th_style),
             html.Th('Tires', style=th_style),
-            html.Th('Aids', style=th_style)
+            html.Th('Aids ℹ️', style=th_style, title='TC=Traction Control, ABS=Anti-lock Brakes, SC=Stability Control, AS=Auto Shift, AC=Auto Clutch, AB=Auto Blip, AL=Auto Lift, PC=Player Control')
         ])),
         html.Tbody(rows)
     ], style=table_style)

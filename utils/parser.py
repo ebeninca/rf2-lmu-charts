@@ -90,13 +90,23 @@ def parse_xml_scores(content):
             if aids_text:
                 for aid in aids_text.split(','):
                     aid = aid.strip()
-                    if 'Clutch' in aid:
-                        aids_list.append('C')
+                    if 'PlayerControl' in aid:
+                        aids_list.append('PC')
+                    elif aid.startswith('TC='):
+                        aids_list.append(f"TC{aid.split('=')[1]}")
+                    elif 'ABS' in aid:
+                        aids_list.append('ABS')
+                    elif 'StabilityControl' in aid:
+                        aids_list.append('SC')
+                    elif 'AutoShift' in aid:
+                        aids_list.append('AS')
+                    elif 'Clutch' in aid:
+                        aids_list.append('AC')
                     elif 'AutoBlip' in aid:
-                        aids_list.append('B')
+                        aids_list.append('AB')
                     elif 'AutoLift' in aid:
-                        aids_list.append('L')
-            aids_display = '/'.join(aids_list) if aids_list else '-'
+                        aids_list.append('AL')
+            aids_display = ','.join(aids_list) if aids_list else '-'
             
             # Add lap 0 with GridPos
             if grid_position > 0:
