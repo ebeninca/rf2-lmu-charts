@@ -202,7 +202,7 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
                 html.Span(f"🔧 Mech Fail: {mech_fail}", style={'marginRight': '20px'}),
                 html.Span(f"💥 Damage: {race_info.get('damage_mult', '0')}x", style={'marginRight': '20px'}),
                 html.Span(f"⛽ Fuel: {race_info.get('fuel_mult', '0')}x", style={'marginRight': '20px'}),
-                html.Span(f"🏎️ Tire: {race_info.get('tire_mult', '0')}x", style={'marginRight': '20px'}),
+                html.Span(f"⚫ Tire: {race_info.get('tire_mult', '0')}x", style={'marginRight': '20px'}),
                 html.Span(f"🔥 Warmers: {tire_warmers}", style={'marginRight': '20px'}),
                 html.Span(f"🎮 Game Version: {race_info.get('game_version', 'Unknown')}")
             ], style={'marginTop': '5px'})
