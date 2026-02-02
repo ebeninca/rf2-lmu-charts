@@ -138,12 +138,15 @@ def parse_xml_scores(content):
                 is_pit = lap.get('pit', '0') == '1'
                 fuel_used = lap.get('fuelUsed', '0')
                 fuel_level = lap.get('fuel', '0')
-                ve = lap.get('veUsed', '0')
-                ve_level = lap.get('ve', '0')
+                ve = lap.get('ve', '0')
+                ve_level = lap.get('veUsed', '0')
                 twfl = lap.get('twfl', '0')
                 twfr = lap.get('twfr', '0')
                 twrl = lap.get('twrl', '0')
                 twrr = lap.get('twrr', '0')
+                s1 = lap.get('s1', '0')
+                s2 = lap.get('s2', '0')
+                s3 = lap.get('s3', '0')
                 fcompound = lap.get('fcompound', '')
                 rcompound = lap.get('rcompound', '')
                 
@@ -200,14 +203,43 @@ def parse_xml_scores(content):
                     
                     # Calculate average tire wear
                     tire_values = []
-                    for tw in [twfl, twfr, twrl, twrr]:
+                    twfl_val = 0
+                    twfr_val = 0
+                    twrl_val = 0
+                    twrr_val = 0
+                    
+                    for tw, var_name in [(twfl, 'twfl_val'), (twfr, 'twfr_val'), (twrl, 'twrl_val'), (twrr, 'twrr_val')]:
                         try:
                             val = float(tw) if tw else 0
+                            if var_name == 'twfl_val':
+                                twfl_val = val
+                            elif var_name == 'twfr_val':
+                                twfr_val = val
+                            elif var_name == 'twrl_val':
+                                twrl_val = val
+                            elif var_name == 'twrr_val':
+                                twrr_val = val
                             if val > 0:
                                 tire_values.append(val)
                         except:
                             pass
                     tire_wear = sum(tire_values) / len(tire_values) if tire_values else 0
+                    
+                    # Parse sector times
+                    try:
+                        s1_val = float(s1) if s1 and s1 != '0' else 0
+                    except (ValueError, TypeError):
+                        s1_val = 0
+                    
+                    try:
+                        s2_val = float(s2) if s2 and s2 != '0' else 0
+                    except (ValueError, TypeError):
+                        s2_val = 0
+                    
+                    try:
+                        s3_val = float(s3) if s3 and s3 != '0' else 0
+                    except (ValueError, TypeError):
+                        s3_val = 0
                     
                     data.append({
                         'Driver': name,
@@ -221,6 +253,13 @@ def parse_xml_scores(content):
                         'VE': virtual_energy,
                         'VELevel': ve_lvl,
                         'TireWear': tire_wear,
+                        'TWFL': twfl_val,
+                        'TWFR': twfr_val,
+                        'TWRL': twrl_val,
+                        'TWRR': twrr_val,
+                        'S1': s1_val,
+                        'S2': s2_val,
+                        'S3': s3_val,
                         'Class': car_cls,
                         'Car': car_id,
                         'VehName': vehicle_name,
@@ -237,7 +276,7 @@ def parse_xml_scores(content):
         df = df.fillna(0)
         
         # Ensure all numeric columns are properly typed
-        numeric_columns = ['Lap', 'Position', 'ET', 'LapTime', 'FuelUsed', 'FuelLevel', 'VE', 'VELevel', 'TireWear']
+        numeric_columns = ['Lap', 'Position', 'ET', 'LapTime', 'FuelUsed', 'FuelLevel', 'VE', 'VELevel', 'TireWear', 'TWFL', 'TWFR', 'TWRL', 'TWRR', 'S1', 'S2', 'S3']
         for col in numeric_columns:
             if col in df.columns:
                 df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)

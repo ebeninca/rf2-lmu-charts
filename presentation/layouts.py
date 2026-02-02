@@ -19,8 +19,8 @@ def create_main_layout(initial_df, initial_race_info, initial_incidents):
                 }
             ),
             
-            html.P('🔒 Your data is not stored or persisted on the server - processed in memory only', 
-                   style={'textAlign': 'center', 'fontSize': '12px', 'color': '#666', 'fontStyle': 'italic', 'margin': '5px 0 15px 0'}),
+            html.P('📁 Maximum file size: 20MB • 🔒 Your data is not stored or persisted on the server - processed in memory only', 
+                   style={'textAlign': 'center', 'fontSize': '12px', 'color': '#666', 'margin': '0'}),
             
             dcc.Loading(
                 id='loading',
