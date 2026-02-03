@@ -319,6 +319,14 @@ def _create_laptimes_table(df):
     if lap_df.empty:
         return html.P('No lap time data available')
     
+    # Limit to 2000 rows for performance
+    if len(lap_df) > 2000:
+        lap_df = lap_df.head(2000)
+        performance_warning = html.P('⚠️ Showing first 2000 laps for performance. Use filters to see specific data.', 
+                                   style={'color': '#ff6b35', 'fontSize': '12px', 'fontStyle': 'italic', 'marginBottom': '10px'})
+    else:
+        performance_warning = None
+    
     # Get finishing order from the last lap data
     last_lap_df = lap_df.groupby('Driver')['Lap'].max().reset_index()
     last_lap_df = last_lap_df.merge(lap_df, on=['Driver', 'Lap'])
@@ -401,7 +409,7 @@ def _create_laptimes_table(df):
             html.Td(pit_str, style={**td_style, 'fontWeight': 'bold', 'color': 'red'})
         ]))
     
-    return html.Div([
+    table_content = [
         html.Table([
             html.Thead(html.Tr([
                 html.Th('Lap', style=th_style),
@@ -417,7 +425,12 @@ def _create_laptimes_table(df):
             ])),
             html.Tbody(rows)
         ], style=table_style)
-    ], style={'padding': '20px 40px'})
+    ]
+    
+    if performance_warning:
+        table_content.insert(0, performance_warning)
+    
+    return html.Div(table_content, style={'padding': '20px 40px'})
 
 def _render_standings_tab(data, stored_lap):
     """Renderiza a aba de standings"""
