@@ -101,14 +101,27 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
         Output('laptimes-content', 'children'),
         [Input('laptimes-tabs', 'value'),
          Input('stored-data', 'data'),
-         Input('driver-filter', 'value')]
+         Input('driver-filter', 'value'),
+         Input('class-filter', 'value'),
+         Input('car-filter', 'value'),
+         Input('veh-filter', 'value'),
+         Input('cartype-filter', 'value')]
     )
-    def render_laptimes_content(active_laptimes_tab, data, selected_drivers):
+    def render_laptimes_content(active_laptimes_tab, data, selected_drivers, selected_classes, selected_cars, selected_veh, selected_cartype):
         df = pd.DataFrame(data)
         
-        # Apply driver filter
-        if selected_drivers and not df.empty:
-            df = df[df['Driver'].isin(selected_drivers)]
+        # Apply all filters
+        if not df.empty:
+            if selected_drivers:
+                df = df[df['Driver'].isin(selected_drivers)]
+            if selected_classes:
+                df = df[df['Class'].isin(selected_classes)]
+            if selected_cars:
+                df = df[df['Car'].isin(selected_cars)]
+            if selected_veh:
+                df = df[df['VehName'].isin(selected_veh)]
+            if selected_cartype:
+                df = df[df['CarType'].isin(selected_cartype)]
         
         filtered_data = df.to_dict('records')
         
@@ -246,13 +259,9 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
     @app.callback(
         Output('events-content', 'children'),
         [Input('events-tabs', 'value'),
-         Input('stored-incidents', 'data')],
-        [State('events-tab-store', 'data')]
+         Input('stored-incidents', 'data')]
     )
-    def render_events_content(active_events_tab, incidents, stored_tab):
-        # Use stored tab if available, otherwise use current selection
-        tab_to_show = stored_tab if stored_tab else active_events_tab
-        
+    def render_events_content(active_events_tab, incidents):
         table_style = {
             'width': '100%', 
             'borderCollapse': 'collapse', 
@@ -271,7 +280,7 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
             'borderBottom': '1px solid #e9ecef'
         }
         
-        if tab_to_show == 'events-chat':
+        if active_events_tab == 'events-chat':
             messages = incidents.get('chat', [])
             if not messages:
                 return html.P('No chat messages')
@@ -279,7 +288,7 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
                 html.Thead(html.Tr([html.Th('Time', style=th_style), html.Th('Message', style=th_style)])),
                 html.Tbody([html.Tr([html.Td(f"{msg['et']}s", style=td_style), html.Td(msg['message'], style=td_style)]) for msg in messages])
             ], style=table_style)
-        elif tab_to_show == 'events-incidents':
+        elif active_events_tab == 'events-incidents':
             messages = incidents.get('incident', [])
             if not messages:
                 return html.P('No incidents')
@@ -287,7 +296,7 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
                 html.Thead(html.Tr([html.Th('Time', style=th_style), html.Th('Message', style=th_style)])),
                 html.Tbody([html.Tr([html.Td(f"{msg['et']}s", style=td_style), html.Td(msg['message'], style=td_style)]) for msg in messages])
             ], style=table_style)
-        elif tab_to_show == 'events-penalties':
+        elif active_events_tab == 'events-penalties':
             messages = incidents.get('penalty', [])
             if not messages:
                 return html.P('No penalties')
@@ -322,10 +331,14 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
     @app.callback(
         Output('laptimes-tabs', 'value'),
         [Input('stored-data', 'data'),
-         Input('driver-filter', 'value')],
+         Input('driver-filter', 'value'),
+         Input('class-filter', 'value'),
+         Input('car-filter', 'value'),
+         Input('veh-filter', 'value'),
+         Input('cartype-filter', 'value')],
         [State('laptimes-tab-store', 'data')]
     )
-    def restore_laptimes_tab(data, selected_drivers, stored_tab):
+    def restore_laptimes_tab(data, selected_drivers, selected_classes, selected_cars, selected_veh, selected_cartype, stored_tab):
         return stored_tab
 
     @app.callback(
