@@ -44,7 +44,8 @@ def create_main_layout(initial_df, initial_race_info, initial_incidents):
             dcc.Store(id='stored-race-info', data=initial_race_info),
             dcc.Store(id='stored-incidents', data=initial_incidents),
             dcc.Store(id='standings-lap-store'),
-            dcc.Store(id='laptimes-tab-store', data='laptimes-charts')
+            dcc.Store(id='laptimes-tab-store', data='laptimes-charts'),
+            dcc.Store(id='events-tab-store', data='events-chat')
         ], className='main-container')
     ])
 

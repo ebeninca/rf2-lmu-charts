@@ -246,9 +246,13 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
     @app.callback(
         Output('events-content', 'children'),
         [Input('events-tabs', 'value'),
-         Input('stored-incidents', 'data')]
+         Input('stored-incidents', 'data')],
+        [State('events-tab-store', 'data')]
     )
-    def render_events_content(active_events_tab, incidents):
+    def render_events_content(active_events_tab, incidents, stored_tab):
+        # Use stored tab if available, otherwise use current selection
+        tab_to_show = stored_tab if stored_tab else active_events_tab
+        
         table_style = {
             'width': '100%', 
             'borderCollapse': 'collapse', 
@@ -267,7 +271,7 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
             'borderBottom': '1px solid #e9ecef'
         }
         
-        if active_events_tab == 'events-chat':
+        if tab_to_show == 'events-chat':
             messages = incidents.get('chat', [])
             if not messages:
                 return html.P('No chat messages')
@@ -275,7 +279,7 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
                 html.Thead(html.Tr([html.Th('Time', style=th_style), html.Th('Message', style=th_style)])),
                 html.Tbody([html.Tr([html.Td(f"{msg['et']}s", style=td_style), html.Td(msg['message'], style=td_style)]) for msg in messages])
             ], style=table_style)
-        elif active_events_tab == 'events-incidents':
+        elif tab_to_show == 'events-incidents':
             messages = incidents.get('incident', [])
             if not messages:
                 return html.P('No incidents')
@@ -283,7 +287,7 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
                 html.Thead(html.Tr([html.Th('Time', style=th_style), html.Th('Message', style=th_style)])),
                 html.Tbody([html.Tr([html.Td(f"{msg['et']}s", style=td_style), html.Td(msg['message'], style=td_style)]) for msg in messages])
             ], style=table_style)
-        elif active_events_tab == 'events-penalties':
+        elif tab_to_show == 'events-penalties':
             messages = incidents.get('penalty', [])
             if not messages:
                 return html.P('No penalties')
@@ -322,6 +326,22 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
         [State('laptimes-tab-store', 'data')]
     )
     def restore_laptimes_tab(data, selected_drivers, stored_tab):
+        return stored_tab
+
+    @app.callback(
+        Output('events-tab-store', 'data'),
+        Input('events-tabs', 'value')
+    )
+    def store_events_tab(selected_tab):
+        return selected_tab
+
+    @app.callback(
+        Output('events-tabs', 'value'),
+        [Input('stored-data', 'data'),
+         Input('class-filter', 'value')],
+        [State('events-tab-store', 'data')]
+    )
+    def restore_events_tab(data, selected_classes, stored_tab):
         return stored_tab
 
 def _create_laptimes_table(df):
