@@ -308,6 +308,22 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
         from presentation.components import create_standings_table
         return create_standings_table(selected_lap, data)
 
+    @app.callback(
+        Output('laptimes-tab-store', 'data'),
+        Input('laptimes-tabs', 'value')
+    )
+    def store_laptimes_tab(selected_tab):
+        return selected_tab
+
+    @app.callback(
+        Output('laptimes-tabs', 'value'),
+        [Input('stored-data', 'data'),
+         Input('driver-filter', 'value')],
+        [State('laptimes-tab-store', 'data')]
+    )
+    def restore_laptimes_tab(data, selected_drivers, stored_tab):
+        return stored_tab
+
 def _create_laptimes_table(df):
     """Cria a tabela de tempos de volta"""
     if df.empty:
@@ -420,7 +436,7 @@ def _create_laptimes_table(df):
                 html.Th('VE', style=th_style),
                 html.Th('Fuel', style=th_style),
                 html.Th('Tire Wear', style=th_style),
-                html.Th('Tires', style=th_style),
+                html.Th('Tires Compound', style=th_style),
                 html.Th('Pit', style=th_style)
             ])),
             html.Tbody(rows)
