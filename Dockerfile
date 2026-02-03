@@ -10,6 +10,7 @@ COPY data/ ./data/
 COPY business/ ./business/
 COPY presentation/ ./presentation/
 COPY assets/ ./assets/
+COPY samples/ ./samples/
 
 EXPOSE 7860
 

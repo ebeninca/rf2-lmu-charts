@@ -1,5 +1,6 @@
 import dash
 import pandas as pd
+import os
 from data.parsers import parse_xml_scores
 from presentation.layouts import create_main_layout
 from presentation.callbacks import register_callbacks
@@ -14,7 +15,8 @@ with open('assets/index.html', 'r') as f:
 
 # Load initial data
 try:
-    with open('/home/ebeninca/repo/rFactor2-lmu-graphs/2026_01_31_17_55_01-49R1.xml', 'r', encoding='utf-8') as f:
+    xml_path = os.path.join(os.path.dirname(__file__), 'samples/2025_anonymized.xmlx')
+    with open(xml_path, 'r', encoding='utf-8') as f:
         initial_df, initial_race_info, initial_incidents = parse_xml_scores(f.read())
 except:
     initial_df = pd.DataFrame()
