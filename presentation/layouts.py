@@ -5,7 +5,11 @@ def create_main_layout(initial_df, initial_race_info, initial_incidents):
     """Cria o layout principal da aplicação"""
     return html.Div([
         html.Div([
-            html.H1('Race Data Visualization', style={'textAlign': 'center'}),
+            html.H1([
+                html.Span('🏁', style={'fontSize': '30px', 'marginRight': '15px'}),
+                'Race Data Visualization',
+                html.Span('🏁', style={'fontSize': '30px', 'marginLeft': '15px'})
+            ], style={'textAlign': 'center'}),
             
             html.Div(id='race-info', style={'textAlign': 'center', 'padding': '10px', 'backgroundColor': '#f0f0f0', 'margin': '10px 0', 'borderRadius': '5px'}),
             

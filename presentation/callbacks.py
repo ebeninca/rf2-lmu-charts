@@ -8,7 +8,8 @@ from business.analytics import (
     update_laptime_chart, update_laptime_no_pit_chart,
     update_fuel_chart, update_ve_chart, update_tire_wear_chart,
     update_fuel_level_chart, update_ve_level_chart, update_tire_consumption_chart,
-    update_consistency_chart, update_tire_degradation_chart
+    update_consistency_chart, update_tire_degradation_chart, update_pace_decay_chart,
+    update_strategy_gantt_chart
 )
 
 def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
@@ -60,7 +61,10 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
         if active_tab == 'tab-standings':
             return _render_standings_tab(data, stored_lap)
         elif active_tab == 'tab-position':
-            return dcc.Graph(id='position-chart', figure=update_position_chart(data, None, None))
+            return html.Div([
+                dcc.Graph(id='position-chart', figure=update_position_chart(data, None, None)),
+                dcc.Graph(id='strategy-gantt-chart', figure=update_strategy_gantt_chart(data, None, None))
+            ])
         elif active_tab == 'tab-gap':
             return html.Div([
                 dcc.Graph(id='class-gap-chart', figure=update_class_gap_chart(data, None, None)),
@@ -83,6 +87,7 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
             ])
         elif active_tab == 'tab-tires':
             return html.Div([
+                dcc.Graph(id='pace-decay-chart', figure=update_pace_decay_chart(data, None, None)),
                 dcc.Graph(id='tire-wear-chart', figure=update_tire_wear_chart(data, None, None)),
                 dcc.Graph(id='tire-consumption-chart', figure=update_tire_consumption_chart(data, None, None)),
                 dcc.Graph(id='tire-degradation-chart', figure=update_tire_degradation_chart(data, None, None))
@@ -209,6 +214,8 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
         if not race_info:
             return ''
         
+        from data.track_flags import get_country_flag
+        
         race_time = race_info.get('time', '0')
         race_laps = race_info.get('laps', '0')
         
@@ -229,15 +236,28 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
             duration_text = f"🏁 {laps_val} laps"
         
         server_name = race_info.get('server', '')
+        track_name = race_info.get('track', 'Unknown')
+        course_name = race_info.get('course', 'Unknown')
         track_length = race_info.get('track_length', '0')
         mech_fail = 'Yes' if race_info.get('mech_fail', '0') == '1' else 'No'
         tire_warmers = 'Yes' if race_info.get('tire_warmers', '0') == '1' else 'No'
+        
+        # Get country flag for the track
+        country_flag, country_name = get_country_flag(track_name)
+        flag_element = html.Img(src=f'https://flagcdn.com/w20/{country_flag.lower()}.png', 
+                               title=country_name, 
+                               className='country-flag',
+                               style={'height': '16px', 'marginRight': '5px', 'verticalAlign': 'middle'}) if country_flag else None
+        
+        track_info_content = [html.Span(f"📍 ", style={'marginRight': '5px'})]
+        track_info_content.append(flag_element)
+        track_info_content.append(html.Span(f"{track_name} - {course_name}"))
         
         first_line = []
         if server_name and server_name != 'Unknown':
             first_line.append(html.Span(f"🖥️ {server_name}", style={'marginRight': '20px'}))
         first_line.extend([
-            html.Span(f"📍 {race_info.get('track', 'Unknown')} - {race_info.get('course', 'Unknown')}", style={'marginRight': '20px'}),
+            html.Span(track_info_content, style={'marginRight': '20px'}),
             html.Span(f"📏 Track Length: {track_length}m", style={'marginRight': '20px'}),
             html.Span(f"📅 {race_info.get('date', 'Unknown')}", style={'marginRight': '20px'}),
             html.Span(duration_text)
