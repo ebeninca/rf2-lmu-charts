@@ -110,8 +110,8 @@ def create_standings_table(selected_lap, data):
             html.Th('Best Lap', style=th_style),
             html.Th('Led', style=th_style),
             html.Th('Pits', style=th_style),
-            html.Th('Tires ⚫', style=th_style, title='Tires used during the selected lap (Front/Rear)'),
-            html.Th('Aids ℹ️', style=th_style, title='TC=Traction Control, ABS=Anti-lock Brakes, SC=Stability Control, AS=Auto Shift, AC=Auto Clutch, AB=Auto Blip, AL=Auto Lift, PC=Player Control')
+            html.Th(['Tires ', html.Span('🛞', className='emoji-icon')], style=th_style, title='Tires used during the selected lap (Front/Rear)'),
+            html.Th(['Aids ', html.Span('ℹ️', className='emoji-icon')], style=th_style, title='TC=Traction Control, ABS=Anti-lock Brakes, SC=Stability Control, AS=Auto Shift, AC=Auto Clutch, AB=Auto Blip, AL=Auto Lift, PC=Player Control')
         ])),
         html.Tbody(rows)
     ], style=table_style)

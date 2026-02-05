@@ -6,9 +6,9 @@ def create_main_layout(initial_df, initial_race_info, initial_incidents):
     return html.Div([
         html.Div([
             html.H1([
-                html.Span('🏁', style={'fontSize': '30px', 'marginRight': '15px'}),
+                html.Span('🏁', className='emoji-icon', style={'fontSize': '30px', 'marginRight': '15px'}),
                 'Race Data Visualization',
-                html.Span('🏁', style={'fontSize': '30px', 'marginLeft': '15px'})
+                html.Span('🏁', className='emoji-icon', style={'fontSize': '30px', 'marginLeft': '15px'})
             ], style={'textAlign': 'center'}),
             
             html.Div(id='race-info', style={'textAlign': 'center', 'padding': '10px', 'backgroundColor': '#f0f0f0', 'margin': '10px 0', 'borderRadius': '5px'}),
@@ -23,7 +23,7 @@ def create_main_layout(initial_df, initial_race_info, initial_incidents):
                 }
             ),
             
-            html.P('📁 Maximum file size: 20MB • 🔒 Your data is not stored or persisted on the server - processed in memory only', 
+            html.P([html.Span('📁', className='emoji-icon'), ' Maximum file size: 20MB • ', html.Span('🔒', className='emoji-icon'), ' Your data is not stored or persisted on the server - processed in memory only'], 
                    style={'textAlign': 'center', 'fontSize': '12px', 'color': '#666', 'margin': '0'}),
             
             dcc.Loading(

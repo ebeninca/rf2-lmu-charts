@@ -33,25 +33,60 @@
             filter: invert(100%);
         }
 
-        /* body.dark-mode img,
-        body.dark-mode video,
-        body.dark-mode iframe, 
-        body.dark-mode canvas,
-        body.dark-mode svg:not(:has(text)),
-        body.dark-mode [class*="icon"],
-        body.dark-mode [class*="Icon"],
-        body.dark-mode [class*="fa-"],
-        body.dark-mode i {
-            filter: invert(100%);
-        } */
-
         body.dark-mode video,
         body.dark-mode img,
-        body.dark-mode iframe,
-        body.dark-mode svg:not(:has(text)),
-        body.dark-mode [class*="icon"],
-        body.dark-mode [class*="Icon"],
-        body.dark-mode [class*="fa-"] {
+        body.dark-mode iframe {
+            filter: invert(100%);
+        }
+
+        /* Double inversion for emoji icons to fix dark mode appearance */
+        body.dark-mode span:has(🏁),
+        body.dark-mode span:has(📁),
+        body.dark-mode span:has(🔒),
+        body.dark-mode span:has(🛞),
+        body.dark-mode span:has(ℹ️),
+        body.dark-mode span:has(⏱️),
+        body.dark-mode span:has(🏁),
+        body.dark-mode span:has(🔧),
+        body.dark-mode span:has(💥),
+        body.dark-mode span:has(⛽),
+        body.dark-mode span:has(🔥),
+        body.dark-mode span:has(🎮),
+        body.dark-mode span:has(ℹ️),
+        body.dark-mode span:has(❌),
+        body.dark-mode span:has(✅),
+        body.dark-mode span:has(⚠️),
+        body.dark-mode span:has(💬),
+        body.dark-mode span:has(🚨),
+        body.dark-mode span:has(📍),
+        body.dark-mode span:has(🖥️),
+        body.dark-mode span:has(📏),
+        body.dark-mode span:has(📅) {
+            filter: invert(100%);
+        }
+
+        /* Alternative approach using class-based targeting for broader compatibility */
+        body.dark-mode .emoji-icon,
+        body.dark-mode [style*="🏁"],
+        body.dark-mode [style*="📁"],
+        body.dark-mode [style*="🔒"],
+        body.dark-mode [style*="🛞"],
+        body.dark-mode [style*="ℹ️"],
+        body.dark-mode [style*="⏱️"],
+        body.dark-mode [style*="🔧"],
+        body.dark-mode [style*="💥"],
+        body.dark-mode [style*="⛽"],
+        body.dark-mode [style*="🔥"],
+        body.dark-mode [style*="🎮"],
+        body.dark-mode [style*="❌"],
+        body.dark-mode [style*="✅"],
+        body.dark-mode [style*="⚠️"],
+        body.dark-mode [style*="💬"],
+        body.dark-mode [style*="🚨"],
+        body.dark-mode [style*="📍"],
+        body.dark-mode [style*="🖥️"],
+        body.dark-mode [style*="📏"],
+        body.dark-mode [style*="📅"] {
             filter: invert(100%);
         }
         

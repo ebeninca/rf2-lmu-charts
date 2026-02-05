@@ -95,9 +95,9 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
         elif active_tab == 'tab-incidents':
             return html.Div([
                 dcc.Tabs(id='events-tabs', value='events-chat', children=[
-                    dcc.Tab(label='💬 Chat', value='events-chat'),
-                    dcc.Tab(label='⚠️ Incidents', value='events-incidents'),
-                    dcc.Tab(label='🚨 Penalties', value='events-penalties')
+                    dcc.Tab(label=[html.Span('💬', className='emoji-icon'), ' Chat'], value='events-chat'),
+                    dcc.Tab(label=[html.Span('⚠️', className='emoji-icon'), ' Incidents'], value='events-incidents'),
+                    dcc.Tab(label=[html.Span('🚨', className='emoji-icon'), ' Penalties'], value='events-penalties')
                 ]),
                 html.Div(id='events-content', style={'padding': '20px 40px'})
             ], style={'padding': '10px 20px 0 20px'})
@@ -158,7 +158,7 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
         file_size_mb = len(decoded) / (1024 * 1024)
         if file_size_mb > 20:
             return initial_df.to_dict('records'), initial_race_info, initial_incidents, html.Div([
-                html.Span('❌ ', style={'fontSize': '16px'}),
+                html.Span(['❌', html.Span('', className='emoji-icon')], style={'fontSize': '16px'}),
                 html.Span(f'File {filename} is too large ({file_size_mb:.1f}MB). Maximum allowed size is 20MB.', 
                          style={'color': '#dc3545', 'fontWeight': 'bold'})
             ], style={'textAlign': 'center', 'padding': '10px', 'backgroundColor': '#f8d7da', 'border': '1px solid #f5c6cb', 'borderRadius': '5px', 'margin': '10px'})
@@ -166,7 +166,7 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
         try:
             df, race_info, incidents = parse_xml_scores(decoded.decode('utf-8'))
             return df.to_dict('records'), race_info, incidents, html.Div([
-                html.Span('✅ ', style={'fontSize': '16px'}),
+                html.Span(['✅', html.Span('', className='emoji-icon')], style={'fontSize': '16px'}),
                 html.Span(f'{filename} loaded successfully!', style={'color': '#28a745', 'fontWeight': 'bold'})
             ], id='success-message', style={
                 'position': 'fixed', 'top': '20px', 'right': '20px', 'zIndex': '9999',
@@ -176,7 +176,7 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
             })
         except Exception as e:
             return initial_df.to_dict('records'), initial_race_info, initial_incidents, html.Div([
-                html.Span('❌ ', style={'fontSize': '16px'}),
+                html.Span(['❌', html.Span('', className='emoji-icon')], style={'fontSize': '16px'}),
                 html.Span(f'Error loading {filename}: {str(e)}', style={'color': '#dc3545', 'fontWeight': 'bold'})
             ], style={'textAlign': 'center', 'padding': '10px', 'backgroundColor': '#f8d7da', 'border': '1px solid #f5c6cb', 'borderRadius': '5px', 'margin': '10px'})
 
@@ -229,11 +229,11 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
         if time_val > 1000:
             hours = time_val // 3600
             minutes = (time_val % 3600) // 60
-            duration_text = f"⏱️ {hours}h {minutes}min" if minutes > 0 else f"⏱️ {hours} hours"
+            duration_text = [html.Span('⏱️', className='emoji-icon'), f" {hours}h {minutes}min"] if minutes > 0 else [html.Span('⏱️', className='emoji-icon'), f" {hours} hours"]
         elif time_val > 0:
-            duration_text = f"⏱️ {time_val} minutes"
+            duration_text = [html.Span('⏱️', className='emoji-icon'), f" {time_val} minutes"]
         else:
-            duration_text = f"🏁 {laps_val} laps"
+            duration_text = [html.Span('🏁', className='emoji-icon'), f" {laps_val} laps"]
         
         server_name = race_info.get('server', '')
         track_name = race_info.get('track', 'Unknown')
@@ -249,17 +249,17 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
                                className='country-flag',
                                style={'height': '16px', 'marginRight': '5px', 'verticalAlign': 'middle'}) if country_flag else None
         
-        track_info_content = [html.Span(f"📍 ", style={'marginRight': '5px'})]
+        track_info_content = [html.Span([html.Span('📍', className='emoji-icon'), " "], style={'marginRight': '5px'})]
         track_info_content.append(flag_element)
         track_info_content.append(html.Span(f"{track_name} - {course_name}"))
         
         first_line = []
         if server_name and server_name != 'Unknown':
-            first_line.append(html.Span(f"🖥️ {server_name}", style={'marginRight': '20px'}))
+            first_line.append(html.Span([html.Span('🖥️', className='emoji-icon'), f" {server_name}"], style={'marginRight': '20px'}))
         first_line.extend([
             html.Span(track_info_content, style={'marginRight': '20px'}),
-            html.Span(f"📏 Track Length: {track_length}m", style={'marginRight': '20px'}),
-            html.Span(f"📅 {race_info.get('date', 'Unknown')}", style={'marginRight': '20px'}),
+            html.Span([html.Span('📏', className='emoji-icon'), f" Track Length: {track_length}m"], style={'marginRight': '20px'}),
+            html.Span([html.Span('📅', className='emoji-icon'), f" {race_info.get('date', 'Unknown')}"], style={'marginRight': '20px'}),
             html.Span(duration_text)
         ])
         
@@ -267,12 +267,12 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
             html.H3('Race Information', style={'marginBottom': '10px'}),
             html.Div(first_line),
             html.Div([
-                html.Span(f"🔧 Mech Fail: {mech_fail}", style={'marginRight': '20px'}),
-                html.Span(f"💥 Damage: {race_info.get('damage_mult', '0')}x", style={'marginRight': '20px'}),
-                html.Span(f"⛽ Fuel: {race_info.get('fuel_mult', '0')}x", style={'marginRight': '20px'}),
-                html.Span(f"⚫ Tire: {race_info.get('tire_mult', '0')}x", style={'marginRight': '20px'}),
-                html.Span(f"🔥 Warmers: {tire_warmers}", style={'marginRight': '20px'}),
-                html.Span(f"🎮 Game Version: {race_info.get('game_version', 'Unknown')}")
+                html.Span([html.Span('🔧', className='emoji-icon'), f" Mech Fail: {mech_fail}"], style={'marginRight': '20px'}),
+                html.Span([html.Span('💥', className='emoji-icon'), f" Damage: {race_info.get('damage_mult', '0')}x"], style={'marginRight': '20px'}),
+                html.Span([html.Span('⛽', className='emoji-icon'), f" Fuel: {race_info.get('fuel_mult', '0')}x"], style={'marginRight': '20px'}),
+                html.Span([html.Span('🛞', className='emoji-icon'), f" Tire: {race_info.get('tire_mult', '0')}x"], style={'marginRight': '20px'}),
+                html.Span([html.Span('🔥', className='emoji-icon'), f" Warmers: {tire_warmers}"], style={'marginRight': '20px'}),
+                html.Span([html.Span('🎮', className='emoji-icon'), f" Game Version: {race_info.get('game_version', 'Unknown')}"])
             ], style={'marginTop': '5px'})
         ])
 
@@ -391,7 +391,7 @@ def _create_laptimes_table(df):
     # Limit to 2000 rows for performance
     if len(lap_df) > 2000:
         lap_df = lap_df.head(2000)
-        performance_warning = html.P('⚠️ Showing first 2000 laps for performance. Use filters to see specific data.', 
+        performance_warning = html.P([html.Span('⚠️', className='emoji-icon'), ' Showing first 2000 laps for performance. Use filters to see specific data.'], 
                                    style={'color': '#ff6b35', 'fontSize': '12px', 'fontStyle': 'italic', 'marginBottom': '10px'})
     else:
         performance_warning = None
@@ -520,7 +520,7 @@ def _render_standings_tab(data, stored_lap):
                 dcc.Dropdown(id='standings-lap-selector', options=lap_options, value=selected_lap, style={'width': '200px'})
             ], style={'display': 'inline-block', 'verticalAlign': 'top'}),
             html.Div([
-                html.P('ℹ️ Only Class filter affects Standings', 
+                html.P([html.Span('ℹ️', className='emoji-icon'), ' Only Class filter affects Standings'], 
                        style={'fontSize': '12px', 'color': '#666', 'fontStyle': 'italic', 'margin': '0', 'paddingTop': '15px'})
             ], style={'display': 'inline-block', 'verticalAlign': 'top', 'marginLeft': '20px'})
         ], style={'marginBottom': '20px'}),
