@@ -861,9 +861,9 @@ def update_pace_decay_chart(data, selected_drivers, selected_classes):
             ))
     
     fig.update_layout(
-        title='Pace Decay - Degradação por Piloto',
-        xaxis_title='Degradação do Pneu (%)',
-        yaxis_title='Delta para Melhor Volta (segundos)',
+        title='Pace Decay - Degradation by Driver',
+        xaxis_title='Tire Degradation (%)',
+        yaxis_title='Delta to Best Lap (seconds)',
         hovermode='closest',
         height=600,
         plot_bgcolor='rgba(0,0,0,0)',

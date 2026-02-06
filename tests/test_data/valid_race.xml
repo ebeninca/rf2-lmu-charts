@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rFactorXML version="1.0">
+    <RaceResults>
+        <TrackVenue>Spa-Francorchamps</TrackVenue>
+        <TrackCourse>Grand Prix</TrackCourse>
+        <TimeString>2024-01-15 14:30:00</TimeString>
+        <RaceLaps>20</RaceLaps>
+        <RaceTime>0</RaceTime>
+        <ServerName>Test Server</ServerName>
+        <TrackLength>7004</TrackLength>
+        <MechFailRate>0</MechFailRate>
+        <DamageMult>100</DamageMult>
+        <FuelMult>1.0</FuelMult>
+        <TireMult>1.0</TireMult>
+        <TireWarmers>1</TireWarmers>
+        <GameVersion>1.0.0.0</GameVersion>
+        <Race> 
+            <Stream>   
+                <Chat et="60.5">Driver One: Hello!</Chat>
+                <Incident et="120.0">Contact between Driver One and Driver Two</Incident>
+                <Penalty et="180.5">Driver Two: 5 second penalty</Penalty>
+            </Stream>
+            <Driver>
+                <Name>Driver One</Name>
+                <CarClass>GT3</CarClass>
+                <GridPos>1</GridPos>
+                <TeamName>Team A</TeamName>
+                <CarNumber>1</CarNumber>
+                <VehName>Car Model A</VehName>
+                <CarType>Type A</CarType>
+                <ControlAndAids>PlayerControl, TC=3, ABS</ControlAndAids>
+                <Lap num="1" p="1" et="120.5" pit="0" fuelUsed="0.05" fuel="0.95" ve="0.1" veUsed="0.9" 
+                    twfl="0.98" twfr="0.97" twrl="0.96" twrr="0.95" s1="40.1" s2="40.2" s3="40.2" 
+                    fcompound="Dry,Soft" rcompound="Dry,Soft">120.500</Lap>
+                <Lap num="2" p="1" et="241.2" pit="0" fuelUsed="0.05" fuel="0.90" ve="0.1" veUsed="0.8" 
+                    twfl="0.96" twfr="0.95" twrl="0.94" twrr="0.93" s1="40.3" s2="40.2" s3="40.2" 
+                    fcompound="Dry,Soft" rcompound="Dry,Soft">120.700</Lap>
+            </Driver>
+            <Driver>
+                <Name>Driver Two</Name>
+                <CarClass>GT3</CarClass>
+                <GridPos>2</GridPos>
+                <TeamName>Team B</TeamName>
+                <CarNumber>2</CarNumber>
+                <VehName>Car Model B</VehName>
+                <CarType>Type B</CarType>
+                <ControlAndAids>PlayerControl</ControlAndAids>
+                <Lap num="1" p="2" et="121.0" pit="0" fuelUsed="0.05" fuel="0.95" ve="0" veUsed="0" 
+                    twfl="0.98" twfr="0.97" twrl="0.96" twrr="0.95" s1="40.5" s2="40.3" s3="40.2" 
+                    fcompound="Dry,Medium" rcompound="Dry,Medium">121.000</Lap>
+                <Lap num="2" p="2" et="242.5" pit="1" fuelUsed="0.05" fuel="1.0" ve="0" veUsed="0" 
+                    twfl="1.0" twfr="1.0" twrl="1.0" twrr="1.0" s1="40.6" s2="40.5" s3="40.4" 
+                    fcompound="Dry,Hard" rcompound="Dry,Hard">121.500</Lap>
+            </Driver>
+        </Race>
+    </RaceResults>
+</rFactorXML>
