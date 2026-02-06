@@ -1,0 +1,28 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# CI/CD
+.github
+
+# Tests
+tests/
+htmlcov/
+.coverage
+coverage.xml
+pytest.ini
+requirements-dev.txt
+
+# Documentation
+*.md
+!README.md
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
