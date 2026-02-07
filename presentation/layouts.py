@@ -29,7 +29,7 @@ def create_main_layout(initial_df, initial_race_info, initial_incidents):
             dcc.Loading(
                 id='loading',
                 type='circle',
-                children=html.Div(id='upload-status')
+                children=[html.Div(id='upload-status')]
             ),
             
             create_filters_section(),
@@ -40,7 +40,7 @@ def create_main_layout(initial_df, initial_race_info, initial_incidents):
                 id='loading-tabs',
                 type='circle',
                 parent_style={'position': 'relative', 'minHeight': '80px'},
-                children=html.Div(id='tabs-content')
+                children=[html.Div(id='tabs-content')]
             ),
             
             # Data stores

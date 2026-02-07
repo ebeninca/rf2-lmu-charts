@@ -32,4 +32,4 @@ register_callbacks(app, initial_df, initial_race_info, initial_incidents)
 if __name__ == '__main__':
     import os
     debug_mode = os.environ.get('DEBUG', 'False') == 'True'
-    app.run_server(debug=debug_mode, host='0.0.0.0', port=7860, dev_tools_props_check=False)
+    app.run(debug=debug_mode, host='0.0.0.0', port=7860, dev_tools_props_check=False)
