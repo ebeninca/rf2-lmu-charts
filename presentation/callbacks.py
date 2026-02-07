@@ -264,7 +264,7 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
         ])
         
         return html.Div([
-            html.H3('Race Information', style={'marginBottom': '10px'}),
+            html.H3([html.Span('🏎️', className='emoji-icon', style={'marginRight': '10px'}), 'Race Information', html.Span('🏎️', className='emoji-icon', style={'marginLeft': '10px'})], style={'marginBottom': '10px'}),
             html.Div(first_line),
             html.Div([
                 html.Span([html.Span('🔧', className='emoji-icon'), f" Mech Fail: {mech_fail}"], style={'marginRight': '20px'}),
