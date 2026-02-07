@@ -95,9 +95,9 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
         elif active_tab == 'tab-incidents':
             return html.Div([
                 dcc.Tabs(id='events-tabs', value='events-chat', children=[
-                    dcc.Tab(label=[html.Span('💬', className='emoji-icon'), ' Chat'], value='events-chat'),
-                    dcc.Tab(label=[html.Span('⚠️', className='emoji-icon'), ' Incidents'], value='events-incidents'),
-                    dcc.Tab(label=[html.Span('🚨', className='emoji-icon'), ' Penalties'], value='events-penalties')
+                    dcc.Tab(label='💬 Chat', value='events-chat'),
+                    dcc.Tab(label='⚠️ Incidents', value='events-incidents'),
+                    dcc.Tab(label='🚨 Penalties', value='events-penalties')
                 ]),
                 html.Div(id='events-content', style={'padding': '20px 40px'})
             ], style={'padding': '10px 20px 0 20px'})
