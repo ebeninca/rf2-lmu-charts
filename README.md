@@ -1,7 +1,7 @@
 ---
 title: rFactor2 / LMU Charts
 emoji: 🏁
-colorFrom: grey
+colorFrom: gray
 colorTo: blue
 sdk: docker
 pinned: false
