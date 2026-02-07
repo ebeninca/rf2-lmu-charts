@@ -1,4 +1,4 @@
----
+`---
 title: rFactor2 / LMU Charts
 emoji: 🏁
 colorFrom: gray
@@ -6,7 +6,7 @@ colorTo: blue
 sdk: docker
 pinned: false
 short_description: rFactor2 and LMU race data visualization and analysis
----
+---`
 
 # rFactor2 / LMU Charts 🏎️
 
