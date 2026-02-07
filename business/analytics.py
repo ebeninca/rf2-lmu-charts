@@ -865,17 +865,7 @@ def update_pace_decay_chart(data, selected_drivers, selected_classes):
         xaxis_title='Tire Degradation (%)',
         yaxis_title='Delta to Best Lap (seconds)',
         hovermode='closest',
-        height=600,
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
-        xaxis=dict(
-            gridcolor='rgba(128,128,128,0.2)',
-            zerolinecolor='rgba(128,128,128,0.5)'
-        ),
-        yaxis=dict(
-            gridcolor='rgba(128,128,128,0.2)',
-            zerolinecolor='rgba(128,128,128,0.5)'
-        )
+        height=600
     )
     
     return fig
