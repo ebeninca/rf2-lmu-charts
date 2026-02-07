@@ -33,13 +33,10 @@
             filter: invert(100%);
         }
 
+        /* Double inversion to fix dark mode appearance */
         body.dark-mode video,
         body.dark-mode img,
-        body.dark-mode iframe {
-            filter: invert(100%);
-        }
-
-        /* Double inversion for emoji icons to fix dark mode appearance */
+        body.dark-mode iframe,
         body.dark-mode span:has(🏁),
         body.dark-mode span:has(📁),
         body.dark-mode span:has(🔒),
@@ -62,11 +59,7 @@
         body.dark-mode span:has(🖥️),
         body.dark-mode span:has(📏),
         body.dark-mode span:has(📅),
-        body.dark-mode span:has(🏎️) {
-            filter: invert(100%);
-        }
-
-        /* Alternative approach using class-based targeting for broader compatibility */
+        body.dark-mode span:has(🏎️), 
         body.dark-mode .emoji-icon,
         body.dark-mode [style*="🏁"],
         body.dark-mode [style*="📁"],
