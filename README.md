@@ -1,14 +1,14 @@
 ---
 title: rFactor2 / LMU Charts
-emoji: 🏎️
-colorFrom: red
+emoji: 🏁
+colorFrom: white
 colorTo: blue
 sdk: docker
 pinned: false
 short_description: rFactor2 and LMU race data visualization and analysis
 ---
 
-# RFactor2 / LMU Graphs 🏎️
+# rFactor2 / LMU Charts 🏎️
 
 [![Tests](https://github.com/ebeninca/rf2-lmu-charts/actions/workflows/test-deploy.yml/badge.svg)](https://github.com/ebeninca/rf2-lmu-charts/actions/workflows/test-deploy.yml)
 [![CodeQL](https://github.com/ebeninca/rf2-lmu-charts/actions/workflows/codeql.yml/badge.svg)](https://github.com/ebeninca/rf2-lmu-charts/actions/workflows/codeql.yml)
@@ -23,7 +23,6 @@ Check out the configuration reference at https://huggingface.co/docs/hub/spaces-
 
 ## Backlog
 
-- Implementar testes unitarios e funcionais
-- Gravação dos arquivos e geração de link
-- Mudar site para Render ??
 - Segurança, evitar DDOS, etc.
+- Gravação dos arquivos e geração de link
+
