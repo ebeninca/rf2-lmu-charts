@@ -1,1 +1,1 @@
-# Unit tests package
+# Business tests package
