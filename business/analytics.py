@@ -29,9 +29,12 @@ def update_strategy_gantt_chart(data, selected_drivers, selected_classes):
     }
     
     # Get finishing order from final positions
+    # Get each driver's last lap and their position at that moment
     final_positions = df.groupby('Driver')['Lap'].idxmax()
     final_data = df.loc[final_positions]
-    drivers_by_finish = final_data.sort_values('Position')['Driver'].tolist()
+    # Sort by: laps completed (descending), then position (ascending)
+    final_data = final_data.sort_values(['Lap', 'Position'], ascending=[False, True])
+    drivers_by_finish = final_data['Driver'].tolist()
     
     y_positions = {driver: i for i, driver in enumerate(drivers_by_finish)}
     
@@ -89,13 +92,17 @@ def update_strategy_gantt_chart(data, selected_drivers, selected_classes):
             compound = stint['compound']
             color = compound_colors.get(compound, '#CCCCCC')
             
+            # Add small gap (0.2 laps) between stints for better visualization
+            stint_start = stint['start'] + 0.1
+            stint_duration = stint['duration'] - 0.2
+            
             fig.add_trace(go.Bar(
-                x=[stint['duration']],
+                x=[stint_duration],
                 y=[driver],
                 orientation='h',
                 name=f"{compound}",
                 marker_color=color,
-                base=stint['start'],
+                base=stint_start,
                 showlegend=False,
                 hovertemplate=f'<b>{driver}</b><br>' +
                              f'Stint: Lap {stint["start"]} - {stint["end"]}<br>' +

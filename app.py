@@ -17,7 +17,7 @@ app = dash.Dash(__name__)
 app.config.suppress_callback_exceptions = True
 
 # Load custom HTML template
-with open(os.path.join(base_path, 'assets/index.html'), 'r') as f:
+with open(os.path.join(base_path, 'assets/index.html'), 'r', encoding='utf-8') as f:
     app.index_string = f.read()
 
 # Load initial data
@@ -44,5 +44,5 @@ if __name__ == '__main__':
         app.run(debug=True, host='0.0.0.0', port=7860, dev_tools_hot_reload=True)
     else:
         from waitress import serve
-        print('Dash is running on http://0.0.0.0:7860/ (Waitress)')
+        print('Dash is running on http://0.0.0.0:7860/')
         serve(app.server, host='0.0.0.0', port=7860, threads=4, channel_timeout=120)
