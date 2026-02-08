@@ -18,9 +18,9 @@ short_description: rFactor2 and LMU race data visualization and analysis
 
 Visualization and analysis tool for rFactor2 and Le Mans Ultimate race data.
 
-Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference
+> Application is running at: [HuggingFace Spaces](https://huggingface.co/spaces/ebeninca/rf2-lmu-charts)
 
-## How to Run
+## How to run locally
 
 Address in all cases: http://localhost:7860/
 
