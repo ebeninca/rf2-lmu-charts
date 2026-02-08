@@ -44,5 +44,5 @@ if __name__ == '__main__':
         app.run(debug=True, host='0.0.0.0', port=7860, dev_tools_hot_reload=True)
     else:
         from waitress import serve
-        print('Dash is running on http://0.0.0.0:7860/ (Waitress)')
+        print('Dash is running on http://0.0.0.0:7860/')
         serve(app.server, host='0.0.0.0', port=7860, threads=4, channel_timeout=120)

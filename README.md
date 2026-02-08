@@ -72,3 +72,4 @@ $ docker stop rf2-lmu-charts && docker rm rf2-lmu-charts
 - Segurança, evitar DDOS, etc.
 - Gravação dos arquivos e geração de link
 
+- Inversao de cores de Icones em Events
