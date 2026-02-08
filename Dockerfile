@@ -19,10 +19,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copiar código da aplicação
 COPY --chown=rlc app.py .
+COPY --chown=rlc server.py .
 COPY --chown=rlc data/ ./data/
 COPY --chown=rlc business/ ./business/
 COPY --chown=rlc presentation/ ./presentation/
 COPY --chown=rlc assets/ ./assets/
 COPY --chown=rlc samples/ ./samples/
 
-CMD ["python", "app.py"]
+CMD ["gunicorn", "-w", "5", "-b", "0.0.0.0:7860", "--timeout", "120", "server:server"]

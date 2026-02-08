@@ -1,3 +1,5 @@
 dash==4.0.0
 plotly==5.18.0
 pandas==2.1.4
+waitress==3.0.2
+gunicorn==23.0.0

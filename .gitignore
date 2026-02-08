@@ -22,3 +22,8 @@ ENV/
 *.swp
 *.swo
 *~
+
+# PyInstaller
+build/
+dist/
+*.spec

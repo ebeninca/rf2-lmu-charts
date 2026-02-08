@@ -1,0 +1,52 @@
+name: Build Executables
+
+on:
+  release:
+    types: [created]
+  workflow_dispatch:
+    branches:
+      - main
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            artifact_name: rf2-lmu-charts-linux
+            asset_name: rf2-lmu-charts-linux
+          - os: windows-latest
+            artifact_name: rf2-lmu-charts-windows.exe
+            asset_name: rf2-lmu-charts-windows.exe
+    
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+        pip install pyinstaller
+    
+    - name: Build executable
+      run: |
+        pyinstaller --onefile --name ${{ matrix.artifact_name }} --add-data "assets:assets" --add-data "samples:samples" --hidden-import=waitress app.py
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.artifact_name }}
+        path: dist/${{ matrix.artifact_name }}
+    
+    - name: Upload to Release
+      if: github.event_name == 'release'
+      uses: softprops/action-gh-release@v1
+      with:
+        files: dist/${{ matrix.artifact_name }}
