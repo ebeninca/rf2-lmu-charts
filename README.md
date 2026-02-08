@@ -20,7 +20,9 @@ Visualization and analysis tool for rFactor2 and Le Mans Ultimate race data.
 
 > Application is running at: [HuggingFace Spaces](https://huggingface.co/spaces/ebeninca/rf2-lmu-charts)
 
-## How to run locally
+Alternatively you can download the Release for Linux and Windows in this page.
+
+## How to run the source code locally
 
 Address in all cases: http://localhost:7860/
 
@@ -36,9 +38,19 @@ $ DEBUG=True python app.py
 
 Why? Waitress (multi-thread) runs both in Windows and Linux
 
+Linux
+
 ```sh
 $ rm -rf build dist *.spec && pyinstaller --onefile --name rf2-lmu-charts --add-data "assets:assets" --add-data "samples:samples" --hidden-import=waitress app.py 2>&1 | tail -10
 ```
+
+Windows 
+
+```sh
+$ rmdir /s /q build dist & del /q *.spec & pip install pyinstaller & pyinstaller --onefile --name rf2-lmu-charts-windows.exe --add-data "assets;assets" --add-data "samples;samples" --hidden-import=waitress app.py
+
+```
+
 
 ### Production (Gunicorn / Docker)
 

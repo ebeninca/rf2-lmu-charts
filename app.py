@@ -17,7 +17,7 @@ app = dash.Dash(__name__)
 app.config.suppress_callback_exceptions = True
 
 # Load custom HTML template
-with open(os.path.join(base_path, 'assets/index.html'), 'r') as f:
+with open(os.path.join(base_path, 'assets/index.html'), 'r', encoding='utf-8') as f:
     app.index_string = f.read()
 
 # Load initial data
