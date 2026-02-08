@@ -92,13 +92,17 @@ def update_strategy_gantt_chart(data, selected_drivers, selected_classes):
             compound = stint['compound']
             color = compound_colors.get(compound, '#CCCCCC')
             
+            # Add small gap (0.2 laps) between stints for better visualization
+            stint_start = stint['start'] + 0.1
+            stint_duration = stint['duration'] - 0.2
+            
             fig.add_trace(go.Bar(
-                x=[stint['duration']],
+                x=[stint_duration],
                 y=[driver],
                 orientation='h',
                 name=f"{compound}",
                 marker_color=color,
-                base=stint['start'],
+                base=stint_start,
                 showlegend=False,
                 hovertemplate=f'<b>{driver}</b><br>' +
                              f'Stint: Lap {stint["start"]} - {stint["end"]}<br>' +
