@@ -41,13 +41,13 @@ Why? Waitress (multi-thread) runs both in Windows and Linux
 Linux
 
 ```sh
-$ rm -rf build dist *.spec && pyinstaller --onefile --name rf2-lmu-charts --add-data "assets:assets" --add-data "samples:samples" --hidden-import=waitress app.py 2>&1 | tail -10
+$ rm -rf build dist *.spec && pyinstaller --onefile --name rf2-lmu-charts --icon=assets/icon.png --add-data "assets:assets" --add-data "samples:samples" --hidden-import=waitress app.py 2>&1 | tail -10
 ```
 
 Windows 
 
 ```sh
-$ rmdir /s /q build dist & del /q *.spec & pip install pyinstaller & pyinstaller --onefile --name rf2-lmu-charts-windows.exe --add-data "assets;assets" --add-data "samples;samples" --hidden-import=waitress app.py
+$ rmdir /s /q build dist & del /q *.spec & pip install pyinstaller & pyinstaller --onefile --name rf2-lmu-charts-windows.exe --icon=assets/icon.ico --add-data "assets;assets" --add-data "samples;samples" --hidden-import=waitress app.py
 
 ```
 

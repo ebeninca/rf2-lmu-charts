@@ -16,9 +16,13 @@ jobs:
           - os: ubuntu-latest
             artifact_name: rf2-lmu-charts-linux
             asset_name: rf2-lmu-charts-linux
+            icon: assets/icon.png
+            separator: ":"
           - os: windows-latest
             artifact_name: rf2-lmu-charts-windows.exe
             asset_name: rf2-lmu-charts-windows.exe
+            icon: assets/icon.ico
+            separator: ";"
     
     runs-on: ${{ matrix.os }}
     
@@ -33,11 +37,14 @@ jobs:
     - name: Install dependencies
       run: |
         pip install -r requirements.txt
-        pip install pyinstaller
+        pip install pyinstaller pillow
+    
+    - name: Create icon
+      run: python create_icon.py
     
     - name: Build executable
       run: |
-        pyinstaller --onefile --name ${{ matrix.artifact_name }} --add-data "assets:assets" --add-data "samples:samples" --hidden-import=waitress app.py
+        pyinstaller --onefile --name ${{ matrix.artifact_name }} --icon=${{ matrix.icon }} --add-data "assets${{ matrix.separator }}assets" --add-data "samples${{ matrix.separator }}samples" --hidden-import=waitress app.py
     
     - name: Upload artifact
       uses: actions/upload-artifact@v4
