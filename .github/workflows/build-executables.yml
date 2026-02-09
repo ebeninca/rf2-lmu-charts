@@ -37,10 +37,7 @@ jobs:
     - name: Install dependencies
       run: |
         pip install -r requirements.txt
-        pip install pyinstaller pillow
-    
-    - name: Create icon
-      run: python create_icon.py
+        pip install pyinstaller
     
     - name: Build executable
       run: |
