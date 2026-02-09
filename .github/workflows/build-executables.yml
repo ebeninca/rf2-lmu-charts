@@ -16,12 +16,12 @@ jobs:
           - os: ubuntu-latest
             artifact_name: rf2-lmu-charts-linux
             asset_name: rf2-lmu-charts-linux
-            icon: assets/icon.png
+            icon: assets/checkered-flag.png
             separator: ":"
           - os: windows-latest
             artifact_name: rf2-lmu-charts-windows.exe
             asset_name: rf2-lmu-charts-windows.exe
-            icon: assets/icon.ico
+            icon: assets/checkered-flag.ico
             separator: ";"
     
     runs-on: ${{ matrix.os }}
