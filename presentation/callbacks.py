@@ -2,6 +2,7 @@ import dash
 from dash import html, dcc, Input, Output, State
 import pandas as pd
 import base64
+import time
 from data.parsers import parse_xml_scores
 from business.analytics import (
     update_position_chart, update_gap_chart, update_class_gap_chart,
@@ -11,6 +12,16 @@ from business.analytics import (
     update_consistency_chart, update_tire_degradation_chart, update_pace_decay_chart,
     update_strategy_gantt_chart
 )
+
+MAX_FILE_SIZE_MB = 20
+
+def validate_file_size(decoded_content):
+    """Valida se o tamanho do arquivo está dentro do limite permitido"""
+    file_size_mb = len(decoded_content) / (1024 * 1024)
+    if file_size_mb > MAX_FILE_SIZE_MB:
+        error_msg = f'File is too large ({file_size_mb:.1f}MB). Maximum allowed size is {MAX_FILE_SIZE_MB}MB.'
+        return False, file_size_mb, error_msg
+    return True, file_size_mb, None
 
 def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
     """Registra todos os callbacks da aplicação"""
@@ -154,31 +165,76 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
         content_type, content_string = contents.split(',')
         decoded = base64.b64decode(content_string)
         
-        # Check file size (20MB limit)
-        file_size_mb = len(decoded) / (1024 * 1024)
-        if file_size_mb > 20:
-            return initial_df.to_dict('records'), initial_race_info, initial_incidents, html.Div([
-                html.Span(['❌', html.Span('', className='emoji-icon')], style={'fontSize': '16px'}),
-                html.Span(f'File {filename} is too large ({file_size_mb:.1f}MB). Maximum allowed size is 20MB.', 
-                         style={'color': '#dc3545', 'fontWeight': 'bold'})
-            ], style={'textAlign': 'center', 'padding': '10px', 'backgroundColor': '#f8d7da', 'border': '1px solid #f5c6cb', 'borderRadius': '5px', 'margin': '10px'})
+        # Validate file size
+        is_valid, file_size_mb, error_msg = validate_file_size(decoded)
+        if not is_valid:
+            return initial_df.to_dict('records'), initial_race_info, initial_incidents, html.Div(
+                html.Div([
+                    html.Span('❌ ', style={'fontSize': '20px', 'marginRight': '10px'}),
+                    html.Span(f'{filename}: {error_msg}', style={'color': '#721c24'})
+                ], style={
+                    'position': 'fixed',
+                    'top': '20px',
+                    'left': '50%',
+                    'transform': 'translateX(-50%)',
+                    'zIndex': '9999',
+                    'padding': '15px 20px',
+                    'backgroundColor': '#f8d7da',
+                    'border': '1px solid #f5c6cb',
+                    'borderRadius': '5px',
+                    'boxShadow': '0 4px 8px rgba(0,0,0,0.2)',
+                    'minWidth': '300px',
+                    'maxWidth': '600px',
+                    'animation': 'fadeOut 1s ease-in 4s forwards'
+                }),
+                key=f'error-{time.time()}'
+            )
         
         try:
             df, race_info, incidents = parse_xml_scores(decoded.decode('utf-8'))
-            return df.to_dict('records'), race_info, incidents, html.Div([
-                html.Span(['✅', html.Span('', className='emoji-icon')], style={'fontSize': '16px'}),
-                html.Span(f'{filename} loaded successfully!', style={'color': '#28a745', 'fontWeight': 'bold'})
-            ], id='success-message', style={
-                'position': 'fixed', 'top': '20px', 'right': '20px', 'zIndex': '9999',
-                'textAlign': 'center', 'padding': '10px 15px', 'backgroundColor': '#d4edda', 
-                'border': '1px solid #c3e6cb', 'borderRadius': '5px', 'boxShadow': '0 4px 8px rgba(0,0,0,0.2)',
-                'animation': 'fadeOut 0.5s ease-in-out 3s forwards'
-            })
+            return df.to_dict('records'), race_info, incidents, html.Div(
+                html.Div([
+                    html.Span('✅ ', style={'fontSize': '20px', 'marginRight': '10px'}),
+                    html.Span(f'{filename} loaded successfully!', style={'color': '#155724'})
+                ], style={
+                    'position': 'fixed',
+                    'top': '20px',
+                    'left': '50%',
+                    'transform': 'translateX(-50%)',
+                    'zIndex': '9999',
+                    'padding': '15px 20px',
+                    'backgroundColor': '#d4edda',
+                    'border': '1px solid #c3e6cb',
+                    'borderRadius': '5px',
+                    'boxShadow': '0 4px 8px rgba(0,0,0,0.2)',
+                    'minWidth': '300px',
+                    'maxWidth': '600px',
+                    'animation': 'fadeOut 1s ease-in 4s forwards'
+                }),
+                key=f'success-{time.time()}'
+            )
         except Exception as e:
-            return initial_df.to_dict('records'), initial_race_info, initial_incidents, html.Div([
-                html.Span(['❌', html.Span('', className='emoji-icon')], style={'fontSize': '16px'}),
-                html.Span(f'Error loading {filename}: {str(e)}', style={'color': '#dc3545', 'fontWeight': 'bold'})
-            ], style={'textAlign': 'center', 'padding': '10px', 'backgroundColor': '#f8d7da', 'border': '1px solid #f5c6cb', 'borderRadius': '5px', 'margin': '10px'})
+            return initial_df.to_dict('records'), initial_race_info, initial_incidents, html.Div(
+                html.Div([
+                    html.Span('❌ ', style={'fontSize': '20px', 'marginRight': '10px'}),
+                    html.Span(f'Error loading {filename}: {str(e)}', style={'color': '#721c24'})
+                ], style={
+                    'position': 'fixed',
+                    'top': '20px',
+                    'left': '50%',
+                    'transform': 'translateX(-50%)',
+                    'zIndex': '9999',
+                    'padding': '15px 20px',
+                    'backgroundColor': '#f8d7da',
+                    'border': '1px solid #f5c6cb',
+                    'borderRadius': '5px',
+                    'boxShadow': '0 4px 8px rgba(0,0,0,0.2)',
+                    'minWidth': '300px',
+                    'maxWidth': '600px',
+                    'animation': 'fadeOut 1s ease-in 4s forwards'
+                }),
+                key=f'error-{time.time()}'
+            )
 
     @app.callback(
         [Output('class-filter', 'options'),

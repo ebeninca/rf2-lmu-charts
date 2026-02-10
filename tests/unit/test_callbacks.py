@@ -34,15 +34,19 @@ class TestUpdateData:
     
     def test_file_too_large_returns_error(self):
         """Testa se arquivo muito grande retorna erro"""
+        from presentation.callbacks import validate_file_size
+        
         # Cria conteúdo grande (>20MB)
         large_content = "x" * (21 * 1024 * 1024)
-        encoded = base64.b64encode(large_content.encode('utf-8')).decode('utf-8')
-        contents = f"data:text/xml;base64,{encoded}"
         
-        # Verifica tamanho
-        decoded = base64.b64decode(encoded)
-        size_mb = len(decoded) / (1024 * 1024)
+        # Valida tamanho usando a função da aplicação
+        is_valid, size_mb, error_msg = validate_file_size(large_content.encode('utf-8'))
+        
+        # Verifica que o arquivo é inválido
+        assert not is_valid
         assert size_mb > 20
+        assert "too large" in error_msg
+        assert "20MB" in error_msg
     
     def test_invalid_xml_returns_error(self, invalid_xml):
         """Testa se XML inválido retorna erro"""
