@@ -1,14 +1,20 @@
 from dash import html, dcc
 import pandas as pd
+from presentation.styles import ICON_LARGE
+
+# Filter styles
+FILTER_LABEL = {'fontSize': '12px', 'marginBottom': '2px'}
+FILTER_DROPDOWN = {'fontSize': '12px', 'minWidth': '220px'}
+FILTER_CONTAINER = {'display': 'inline-block', 'verticalAlign': 'top', 'padding': '10px'}
 
 def create_main_layout(initial_df, initial_race_info, initial_incidents):
     """Cria o layout principal da aplicação"""
     return html.Div([
         html.Div([
             html.H1([
-                html.Span('🏁', className='emoji-icon', style={'fontSize': '30px', 'marginRight': '15px'}),
+                html.Span('🏁', className='emoji-icon', style=ICON_LARGE),
                 'Race Data Visualization',
-                html.Span('🏁', className='emoji-icon', style={'fontSize': '30px', 'marginLeft': '15px'})
+                html.Span('🏁', className='emoji-icon', style=ICON_LARGE)
             ], style={'textAlign': 'center'}),
             
             html.Div(id='race-info', style={'textAlign': 'center', 'padding': '10px', 'backgroundColor': '#f0f0f0', 'margin': '10px 0', 'borderRadius': '5px'}),
@@ -57,29 +63,29 @@ def create_filters_section():
     """Cria a seção de filtros"""
     return html.Div([
         html.Div([
-            html.Label('Select Class:', style={'fontSize': '12px', 'marginBottom': '2px'}),
-            dcc.Dropdown(id='class-filter', multi=True, placeholder='All Classes', style={'fontSize': '12px', 'minWidth': '220px'}),
-        ], style={'display': 'inline-block', 'verticalAlign': 'top', 'padding': '10px'}),
+            html.Label('Select Class:', style=FILTER_LABEL),
+            dcc.Dropdown(id='class-filter', multi=True, placeholder='All Classes', style=FILTER_DROPDOWN),
+        ], style=FILTER_CONTAINER),
         
         html.Div([
-            html.Label('Select Drivers:', style={'fontSize': '12px', 'marginBottom': '2px'}),
-            dcc.Dropdown(id='driver-filter', multi=True, placeholder='All Drivers', style={'fontSize': '12px', 'minWidth': '220px'}),
-        ], style={'display': 'inline-block', 'verticalAlign': 'top', 'padding': '10px'}),
+            html.Label('Select Drivers:', style=FILTER_LABEL),
+            dcc.Dropdown(id='driver-filter', multi=True, placeholder='All Drivers', style=FILTER_DROPDOWN),
+        ], style=FILTER_CONTAINER),
         
         html.Div([
-            html.Label('Select Team:', style={'fontSize': '12px', 'marginBottom': '2px'}),
-            dcc.Dropdown(id='car-filter', multi=True, placeholder='All Teams', style={'fontSize': '12px', 'minWidth': '220px'}),
-        ], style={'display': 'inline-block', 'verticalAlign': 'top', 'padding': '10px'}),
+            html.Label('Select Team:', style=FILTER_LABEL),
+            dcc.Dropdown(id='car-filter', multi=True, placeholder='All Teams', style=FILTER_DROPDOWN),
+        ], style=FILTER_CONTAINER),
         
         html.Div([
-            html.Label('Select Vehicle:', style={'fontSize': '12px', 'marginBottom': '2px'}),
-            dcc.Dropdown(id='veh-filter', multi=True, placeholder='All Vehicles', style={'fontSize': '12px', 'minWidth': '220px'}),
-        ], style={'display': 'inline-block', 'verticalAlign': 'top', 'padding': '10px'}),
+            html.Label('Select Vehicle:', style=FILTER_LABEL),
+            dcc.Dropdown(id='veh-filter', multi=True, placeholder='All Vehicles', style=FILTER_DROPDOWN),
+        ], style=FILTER_CONTAINER),
         
         html.Div([
-            html.Label('Select Car Type:', style={'fontSize': '12px', 'marginBottom': '2px'}),
-            dcc.Dropdown(id='cartype-filter', multi=True, placeholder='All Car Types', style={'fontSize': '12px', 'minWidth': '220px'}),
-        ], style={'display': 'inline-block', 'verticalAlign': 'top', 'padding': '10px'}),
+            html.Label('Select Car Type:', style=FILTER_LABEL),
+            dcc.Dropdown(id='cartype-filter', multi=True, placeholder='All Car Types', style=FILTER_DROPDOWN),
+        ], style=FILTER_CONTAINER),
     ])
 
 def create_tabs_section():

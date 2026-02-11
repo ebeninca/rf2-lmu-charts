@@ -4,6 +4,11 @@ import pandas as pd
 import base64
 import time
 from data.parsers import parse_xml_scores
+from presentation.styles import (
+    CONTENT_PADDING, EVENTS_PADDING, ERROR_MESSAGE, SUCCESS_MESSAGE,
+    ICON_LARGE, ICON_MARGIN, ICON_MARGIN_20, ERROR_TEXT, SUCCESS_TEXT,
+    FLAG_ICON, TABLE_HEADER, TABLE_CELL, TABLE_CELL_LEFT, NOTIFICATION_BASE
+)
 from business.analytics import (
     update_position_chart, update_gap_chart, update_class_gap_chart,
     update_laptime_chart, update_laptime_no_pit_chart,
@@ -88,7 +93,7 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
                     dcc.Tab(label='Table', value='laptimes-table')
                 ]),
                 html.Div(id='laptimes-content')
-            ], style={'padding': '10px 20px 0 20px'})
+            ], style=CONTENT_PADDING)
         elif active_tab == 'tab-fuel':
             return html.Div([
                 dcc.Graph(id='fuel-level-chart', figure=update_fuel_level_chart(data, None, None)),
@@ -110,8 +115,8 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
                     dcc.Tab(label='⚠️ Incidents', value='events-incidents'),
                     dcc.Tab(label='🚨 Penalties', value='events-penalties')
                 ]),
-                html.Div(id='events-content', style={'padding': '20px 40px'})
-            ], style={'padding': '10px 20px 0 20px'})
+                html.Div(id='events-content', style=EVENTS_PADDING)
+            ], style=CONTENT_PADDING)
 
     @app.callback(
         Output('laptimes-content', 'children'),
@@ -170,23 +175,9 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
         if not is_valid:
             return initial_df.to_dict('records'), initial_race_info, initial_incidents, html.Div(
                 html.Div([
-                    html.Span('❌ ', style={'fontSize': '20px', 'marginRight': '10px'}),
-                    html.Span(f'{filename}: {error_msg}', style={'color': '#721c24'})
-                ], style={
-                    'position': 'fixed',
-                    'top': '20px',
-                    'left': '50%',
-                    'transform': 'translateX(-50%)',
-                    'zIndex': '9999',
-                    'padding': '15px 20px',
-                    'backgroundColor': '#f8d7da',
-                    'border': '1px solid #f5c6cb',
-                    'borderRadius': '5px',
-                    'boxShadow': '0 4px 8px rgba(0,0,0,0.2)',
-                    'minWidth': '300px',
-                    'maxWidth': '600px',
-                    'animation': 'fadeOut 1s ease-in 4s forwards'
-                }),
+                    html.Span('❌ ', style=ICON_LARGE),
+                    html.Span(f'{filename}: {error_msg}', style=ERROR_TEXT)
+                ], style={**ERROR_MESSAGE, **NOTIFICATION_BASE}),
                 key=f'error-{time.time()}'
             )
         
@@ -194,45 +185,17 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
             df, race_info, incidents = parse_xml_scores(decoded.decode('utf-8'))
             return df.to_dict('records'), race_info, incidents, html.Div(
                 html.Div([
-                    html.Span('✅ ', style={'fontSize': '20px', 'marginRight': '10px'}),
-                    html.Span(f'{filename} loaded successfully!', style={'color': '#155724'})
-                ], style={
-                    'position': 'fixed',
-                    'top': '20px',
-                    'left': '50%',
-                    'transform': 'translateX(-50%)',
-                    'zIndex': '9999',
-                    'padding': '15px 20px',
-                    'backgroundColor': '#d4edda',
-                    'border': '1px solid #c3e6cb',
-                    'borderRadius': '5px',
-                    'boxShadow': '0 4px 8px rgba(0,0,0,0.2)',
-                    'minWidth': '300px',
-                    'maxWidth': '600px',
-                    'animation': 'fadeOut 1s ease-in 4s forwards'
-                }),
+                    html.Span('✅ ', style=ICON_LARGE),
+                    html.Span(f'{filename} loaded successfully!', style=SUCCESS_TEXT)
+                ], style={**SUCCESS_MESSAGE, **NOTIFICATION_BASE}),
                 key=f'success-{time.time()}'
             )
         except Exception as e:
             return initial_df.to_dict('records'), initial_race_info, initial_incidents, html.Div(
                 html.Div([
-                    html.Span('❌ ', style={'fontSize': '20px', 'marginRight': '10px'}),
-                    html.Span(f'Error loading {filename}: {str(e)}', style={'color': '#721c24'})
-                ], style={
-                    'position': 'fixed',
-                    'top': '20px',
-                    'left': '50%',
-                    'transform': 'translateX(-50%)',
-                    'zIndex': '9999',
-                    'padding': '15px 20px',
-                    'backgroundColor': '#f8d7da',
-                    'border': '1px solid #f5c6cb',
-                    'borderRadius': '5px',
-                    'boxShadow': '0 4px 8px rgba(0,0,0,0.2)',
-                    'minWidth': '300px',
-                    'maxWidth': '600px',
-                    'animation': 'fadeOut 1s ease-in 4s forwards'
-                }),
+                    html.Span('❌ ', style=ICON_LARGE),
+                    html.Span(f'Error loading {filename}: {str(e)}', style=ERROR_TEXT)
+                ], style={**ERROR_MESSAGE, **NOTIFICATION_BASE}),
                 key=f'error-{time.time()}'
             )
 
@@ -303,30 +266,30 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
         flag_element = html.Img(src=f'https://flagcdn.com/w20/{country_flag.lower()}.png', 
                                title=country_name, 
                                className='country-flag',
-                               style={'height': '16px', 'marginRight': '5px', 'verticalAlign': 'middle'}) if country_flag else None
+                               style=FLAG_ICON) if country_flag else None
         
-        track_info_content = [html.Span([html.Span('📍', className='emoji-icon'), " "], style={'marginRight': '5px'})]
+        track_info_content = [html.Span([html.Span('📍', className='emoji-icon'), " "], style=ICON_MARGIN)]
         track_info_content.append(flag_element)
         track_info_content.append(html.Span(f"{track_name} - {course_name}"))
         
         first_line = []
         if server_name and server_name != 'Unknown':
-            first_line.append(html.Span([html.Span('🖥️', className='emoji-icon'), f" {server_name}"], style={'marginRight': '20px'}))
+            first_line.append(html.Span([html.Span('🖥️', className='emoji-icon'), f" {server_name}"], style=ICON_MARGIN_20))
         first_line.extend([
-            html.Span(track_info_content, style={'marginRight': '20px'}),
-            html.Span([html.Span('📏', className='emoji-icon'), f" Track Length: {track_length}m"], style={'marginRight': '20px'}),
-            html.Span([html.Span('📅', className='emoji-icon'), f" {race_info.get('date', 'Unknown')}"], style={'marginRight': '20px'}),
+            html.Span(track_info_content, style=ICON_MARGIN_20),
+            html.Span([html.Span('📏', className='emoji-icon'), f" Track Length: {track_length}m"], style=ICON_MARGIN_20),
+            html.Span([html.Span('📅', className='emoji-icon'), f" {race_info.get('date', 'Unknown')}"], style=ICON_MARGIN_20),
             html.Span(duration_text)
         ])
         
         return html.Div([
             html.Div(first_line),
             html.Div([
-                html.Span([html.Span('🔧', className='emoji-icon'), f" Mech Fail: {mech_fail}"], style={'marginRight': '20px'}),
-                html.Span([html.Span('💥', className='emoji-icon'), f" Damage: {race_info.get('damage_mult', '0')}x"], style={'marginRight': '20px'}),
-                html.Span([html.Span('⛽', className='emoji-icon'), f" Fuel: {race_info.get('fuel_mult', '0')}x"], style={'marginRight': '20px'}),
-                html.Span([html.Span('🛞', className='emoji-icon'), f" Tire: {race_info.get('tire_mult', '0')}x"], style={'marginRight': '20px'}),
-                html.Span([html.Span('🔥', className='emoji-icon'), f" Warmers: {tire_warmers}"], style={'marginRight': '20px'}),
+                html.Span([html.Span('🔧', className='emoji-icon'), f" Mech Fail: {mech_fail}"], style=ICON_MARGIN_20),
+                html.Span([html.Span('💥', className='emoji-icon'), f" Damage: {race_info.get('damage_mult', '0')}x"], style=ICON_MARGIN_20),
+                html.Span([html.Span('⛽', className='emoji-icon'), f" Fuel: {race_info.get('fuel_mult', '0')}x"], style=ICON_MARGIN_20),
+                html.Span([html.Span('🛞', className='emoji-icon'), f" Tire: {race_info.get('tire_mult', '0')}x"], style=ICON_MARGIN_20),
+                html.Span([html.Span('🔥', className='emoji-icon'), f" Warmers: {tire_warmers}"], style=ICON_MARGIN_20),
                 html.Span([html.Span('🎮', className='emoji-icon'), f" Game Version: {race_info.get('game_version', 'Unknown')}"])
             ], style={'marginTop': '5px'})
         ])
@@ -343,17 +306,8 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
             'fontSize': '14px',
             'boxShadow': '0 2px 4px rgba(0,0,0,0.1)'
         }
-        th_style = {
-            'textAlign': 'left',
-            'padding': '12px',
-            'backgroundColor': '#f8f9fa',
-            'borderBottom': '2px solid #dee2e6',
-            'fontWeight': '600'
-        }
-        td_style = {
-            'padding': '10px 12px',
-            'borderBottom': '1px solid #e9ecef'
-        }
+        th_style = {**TABLE_HEADER, 'textAlign': 'left'}
+        td_style = {**TABLE_CELL_LEFT, 'padding': '10px 12px'}
         
         if active_events_tab == 'events-chat':
             messages = incidents.get('chat', [])
