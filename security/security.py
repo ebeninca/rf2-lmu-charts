@@ -2,7 +2,7 @@ import os
 import re
 import logging
 import xml.etree.ElementTree as ET
-import magic
+import puremagic
 from logging.handlers import RotatingFileHandler
 from werkzeug.utils import secure_filename
 
@@ -54,12 +54,20 @@ def validate_upload(contents, filename):
         except UnicodeDecodeError:
             raise ValueError("Arquivo não é texto válido UTF-8")
     
-    # 4. Validar MIME type com python-magic
+    # 4. Validar MIME type com puremagic
     try:
-        mime = magic.Magic(mime=True)
-        file_mime = mime.from_buffer(contents_bytes)
+        # puremagic detecta o tipo MIME pelos magic bytes
+        mime_types = puremagic.from_buffer(contents_bytes)
+        if mime_types:
+            file_mime = mime_types[0].mime_type
+        else:
+            # Se não detectar, assume application/octet-stream (rejeitará)
+            file_mime = 'application/octet-stream'
+        
         if file_mime not in ALLOWED_MIME_TYPES:
             raise ValueError(f"MIME type não permitido: {file_mime}")
+    except ValueError:
+        raise  # Re-raise ValueError para MIME não permitido
     except Exception as e:
         raise ValueError(f"Erro ao validar MIME type: {str(e)}")
     
