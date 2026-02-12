@@ -29,30 +29,30 @@ class TestSecurityModule:
     
     def test_security_module_exists(self):
         """Testa se o módulo security.py existe"""
-        import security
+        import security.security as security
         assert security is not None
     
     def test_validate_upload_function_exists(self):
         """Testa se função validate_upload existe"""
-        import security
+        import security.security as security
         assert hasattr(security, 'validate_upload')
         assert callable(security.validate_upload)
     
     def test_sanitize_filter_input_function_exists(self):
         """Testa se função sanitize_filter_input existe"""
-        import security
+        import security.security as security
         assert hasattr(security, 'sanitize_filter_input')
         assert callable(security.sanitize_filter_input)
     
     def test_add_security_headers_function_exists(self):
         """Testa se função add_security_headers existe"""
-        import security
+        import security.security as security
         assert hasattr(security, 'add_security_headers')
         assert callable(security.add_security_headers)
     
     def test_log_suspicious_activity_function_exists(self):
         """Testa se função log_suspicious_activity existe"""
-        import security
+        import security.security as security
         assert hasattr(security, 'log_suspicious_activity')
         assert callable(security.log_suspicious_activity)
 
@@ -147,7 +147,7 @@ class TestXXEProtection:
 
 def test_file_invalid_extension():
     """Testa se arquivo com extensão inválida é bloqueado"""
-    from security import validate_upload
+    from security.security import validate_upload
     
     with pytest.raises(ValueError):
         validate_upload(b"test", "malicious.exe")
@@ -155,7 +155,7 @@ def test_file_invalid_extension():
 
 def test_file_too_large():
     """Testa se arquivo muito grande é bloqueado"""
-    from security import validate_upload
+    from security.security import validate_upload
     
     # Simular arquivo 25MB
     large_content = b"x" * (25 * 1024 * 1024)
@@ -166,7 +166,7 @@ def test_file_too_large():
 
 def test_file_malformed_xml():
     """Testa se XML malformado é bloqueado"""
-    from security import validate_upload
+    from security.security import validate_upload
     
     with pytest.raises(ValueError):
         validate_upload(b"<invalid>xml", "invalid.xml")
@@ -174,7 +174,7 @@ def test_file_malformed_xml():
 
 def test_file_valid_xml():
     """Testa se XML válido é aceito"""
-    from security import validate_upload
+    from security.security import validate_upload
     
     valid_xml = b'<?xml version="1.0"?><root><test>valid</test></root>'
     safe_name, content = validate_upload(valid_xml, "valid.xml")

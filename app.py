@@ -7,7 +7,7 @@ from flask_limiter.util import get_remote_address
 from data.parsers_secure import parse_xml_scores
 from presentation.layouts import create_main_layout
 from presentation.callbacks import register_callbacks
-from security import add_security_headers
+from security.security import add_security_headers
 
 # Get base path for PyInstaller
 if getattr(sys, 'frozen', False):

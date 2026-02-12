@@ -1,6 +1,8 @@
 import os
 import re
 import logging
+import xml.etree.ElementTree as ET
+import magic
 from logging.handlers import RotatingFileHandler
 from werkzeug.utils import secure_filename
 
@@ -30,7 +32,6 @@ def log_suspicious_activity(ip, action, details):
 
 def validate_upload(contents, filename):
     """Validação completa de upload"""
-    import xml.etree.ElementTree as ET
     
     # 1. Validar extensão
     file_ext = os.path.splitext(filename)[1].lower()
@@ -42,16 +43,27 @@ def validate_upload(contents, filename):
     if file_size > MAX_FILE_SIZE:
         raise ValueError(f"Arquivo muito grande: {file_size/1024/1024:.1f}MB")
     
-    # 3. Validar se é texto válido
-    try:
-        if isinstance(contents, bytes):
+    # 3. Converter para bytes se necessário (para validar MIME)
+    if isinstance(contents, str):
+        contents_bytes = contents.encode('utf-8')
+        contents_str = contents
+    else:
+        contents_bytes = contents
+        try:
             contents_str = contents.decode('utf-8')
-        else:
-            contents_str = contents
-    except UnicodeDecodeError:
-        raise ValueError("Arquivo não é texto válido UTF-8")
+        except UnicodeDecodeError:
+            raise ValueError("Arquivo não é texto válido UTF-8")
     
-    # 4. Validar XML básico (estrutura)
+    # 4. Validar MIME type com python-magic
+    try:
+        mime = magic.Magic(mime=True)
+        file_mime = mime.from_buffer(contents_bytes)
+        if file_mime not in ALLOWED_MIME_TYPES:
+            raise ValueError(f"MIME type não permitido: {file_mime}")
+    except Exception as e:
+        raise ValueError(f"Erro ao validar MIME type: {str(e)}")
+    
+    # 5. Validar XML básico (estrutura)
     # Não usar defusedxml aqui pois bloqueia entidades internas legítimas
     # A proteção XXE é feita no parser_secure.py
     try:
@@ -59,7 +71,7 @@ def validate_upload(contents, filename):
     except ET.ParseError as e:
         raise ValueError(f"XML malformado: {str(e)}")
     
-    # 5. Sanitizar filename
+    # 6. Sanitizar filename
     safe_filename = secure_filename(filename)
     
     return safe_filename, contents_str

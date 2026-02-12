@@ -4,7 +4,7 @@ import pandas as pd
 import base64
 import time
 from data.parsers_secure import parse_xml_scores
-from security import validate_upload, sanitize_filter_input, log_suspicious_activity
+from security.security import validate_upload, sanitize_filter_input, log_suspicious_activity
 from flask_limiter.util import get_remote_address
 from presentation.styles import (
     CONTENT_PADDING, EVENTS_PADDING, ERROR_MESSAGE, SUCCESS_MESSAGE,
@@ -22,7 +22,7 @@ from business.analytics import (
 
 def validate_file_size(decoded_content):
     """Valida se o tamanho do arquivo está dentro do limite permitido"""
-    from security import MAX_FILE_SIZE
+    from security.security import MAX_FILE_SIZE
     file_size_mb = len(decoded_content) / (1024 * 1024)
     max_size_mb = MAX_FILE_SIZE / (1024 * 1024)
     if file_size_mb > max_size_mb:
