@@ -68,6 +68,27 @@ $ docker stop rf2-lmu-charts && docker rm rf2-lmu-charts
 
 ## Backlog
 
-- Segurança, evitar DDOS, etc.
+- ~~Segurança, evitar DDOS, etc.~~ ✅ **IMPLEMENTADO** - Ver [SECURITY_README.md](SECURITY_README.md)
 - Gravação dos arquivos e geração de link
 - Inversao de cores de Icones em Events
+- Manter logs gerais em stdout, mandar logs criticos e erros para Discord ??
+
+## 🔒 Security
+
+This application implements comprehensive security measures including:
+- Rate limiting (200/day, 50/hour per IP)
+- File upload validation (size, type, structure)
+- XXE attack prevention
+- Security headers (CSP, XSS protection)
+- Request timeouts
+- Secure XML parsing
+
+For details, see:
+- [SECURITY_README.md](SECURITY_README.md) - Quick start guide
+- [SECURITY.md](SECURITY.md) - Complete security plan
+- [SECURITY_IMPLEMENTATION.md](SECURITY_IMPLEMENTATION.md) - Implementation details
+
+Test security implementation:
+```bash
+python test_security.py
+```

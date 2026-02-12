@@ -27,3 +27,8 @@ ENV/
 build/
 dist/
 *.spec
+
+# Security
+.env
+logs/
+*.log

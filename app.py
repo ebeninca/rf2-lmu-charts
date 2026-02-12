@@ -2,9 +2,12 @@ import dash
 import pandas as pd
 import os
 import sys
-from data.parsers import parse_xml_scores
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from data.parsers_secure import parse_xml_scores
 from presentation.layouts import create_main_layout
 from presentation.callbacks import register_callbacks
+from security import add_security_headers
 
 # Get base path for PyInstaller
 if getattr(sys, 'frozen', False):
@@ -16,6 +19,20 @@ else:
 app = dash.Dash(__name__)
 app.config.suppress_callback_exceptions = True
 
+# Initialize rate limiter
+limiter = Limiter(
+    app=app.server,
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://",
+    strategy="fixed-window"
+)
+
+# Add security headers
+@app.server.after_request
+def apply_security_headers(response):
+    return add_security_headers(response)
+
 # Load custom HTML template
 with open(os.path.join(base_path, 'assets/index.html'), 'r', encoding='utf-8') as f:
     app.index_string = f.read()
@@ -25,7 +42,7 @@ try:
     xml_path = os.path.join(base_path, 'samples/2025_anonymized.xmlx')
     with open(xml_path, 'r', encoding='utf-8') as f:
         initial_df, initial_race_info, initial_incidents = parse_xml_scores(f.read())
-except:
+except Exception:
     initial_df = pd.DataFrame()
     initial_race_info = {}
     initial_incidents = {'chat': [], 'incident': [], 'penalty': []}

@@ -3,7 +3,9 @@ from dash import html, dcc, Input, Output, State
 import pandas as pd
 import base64
 import time
-from data.parsers import parse_xml_scores
+from data.parsers_secure import parse_xml_scores
+from security import validate_upload, sanitize_filter_input, log_suspicious_activity
+from flask_limiter.util import get_remote_address
 from presentation.styles import (
     CONTENT_PADDING, EVENTS_PADDING, ERROR_MESSAGE, SUCCESS_MESSAGE,
     ICON_LARGE, ICON_MARGIN, ICON_MARGIN_20, ERROR_TEXT, SUCCESS_TEXT,
@@ -18,13 +20,13 @@ from business.analytics import (
     update_strategy_gantt_chart
 )
 
-MAX_FILE_SIZE_MB = 20
-
 def validate_file_size(decoded_content):
     """Valida se o tamanho do arquivo está dentro do limite permitido"""
+    from security import MAX_FILE_SIZE
     file_size_mb = len(decoded_content) / (1024 * 1024)
-    if file_size_mb > MAX_FILE_SIZE_MB:
-        error_msg = f'File is too large ({file_size_mb:.1f}MB). Maximum allowed size is {MAX_FILE_SIZE_MB}MB.'
+    max_size_mb = MAX_FILE_SIZE / (1024 * 1024)
+    if file_size_mb > max_size_mb:
+        error_msg = f'File is too large ({file_size_mb:.1f}MB). Maximum allowed size is {max_size_mb:.0f}MB.'
         return False, file_size_mb, error_msg
     return True, file_size_mb, None
 
@@ -167,22 +169,28 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
         if contents is None:
             return initial_df.to_dict('records'), initial_race_info, initial_incidents, ''
         
-        content_type, content_string = contents.split(',')
-        decoded = base64.b64decode(content_string)
-        
-        # Validate file size
-        is_valid, file_size_mb, error_msg = validate_file_size(decoded)
-        if not is_valid:
-            return initial_df.to_dict('records'), initial_race_info, initial_incidents, html.Div(
-                html.Div([
-                    html.Span('❌ ', style=ICON_LARGE),
-                    html.Span(f'{filename}: {error_msg}', style=ERROR_TEXT)
-                ], style={**ERROR_MESSAGE, **NOTIFICATION_BASE}),
-                key=f'error-{time.time()}'
-            )
-        
         try:
-            df, race_info, incidents = parse_xml_scores(decoded.decode('utf-8'))
+            content_type, content_string = contents.split(',')
+            decoded = base64.b64decode(content_string)
+            
+            # Validate file size
+            is_valid, file_size_mb, error_msg = validate_file_size(decoded)
+            if not is_valid:
+                log_suspicious_activity('unknown', 'large_file_upload', f'{filename}: {file_size_mb:.1f}MB')
+                return initial_df.to_dict('records'), initial_race_info, initial_incidents, html.Div(
+                    html.Div([
+                        html.Span('❌ ', style=ICON_LARGE),
+                        html.Span(f'{filename}: {error_msg}', style=ERROR_TEXT)
+                    ], style={**ERROR_MESSAGE, **NOTIFICATION_BASE}),
+                    key=f'error-{time.time()}'
+                )
+            
+            # Validate upload (extension, MIME type, XML structure)
+            safe_filename, content_str = validate_upload(decoded, filename)
+            
+            # Parse (Gunicorn timeout de 30s protege contra processamento lento)
+            df, race_info, incidents = parse_xml_scores(content_str)
+            
             return df.to_dict('records'), race_info, incidents, html.Div(
                 html.Div([
                     html.Span('✅ ', style=ICON_LARGE),
@@ -190,7 +198,17 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
                 ], style={**SUCCESS_MESSAGE, **NOTIFICATION_BASE}),
                 key=f'success-{time.time()}'
             )
+        except ValueError as e:
+            log_suspicious_activity('unknown', 'invalid_file', f'{filename}: {str(e)}')
+            return initial_df.to_dict('records'), initial_race_info, initial_incidents, html.Div(
+                html.Div([
+                    html.Span('❌ ', style=ICON_LARGE),
+                    html.Span(f'Error: {str(e)}', style=ERROR_TEXT)
+                ], style={**ERROR_MESSAGE, **NOTIFICATION_BASE}),
+                key=f'error-{time.time()}'
+            )
         except Exception as e:
+            log_suspicious_activity('unknown', 'parse_error', f'{filename}: {str(e)}')
             return initial_df.to_dict('records'), initial_race_info, initial_incidents, html.Div(
                 html.Div([
                     html.Span('❌ ', style=ICON_LARGE),
