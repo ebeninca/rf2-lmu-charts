@@ -1,6 +1,7 @@
 import os
 import re
 import logging
+import io
 import xml.etree.ElementTree as ET
 import puremagic
 from logging.handlers import RotatingFileHandler
@@ -57,13 +58,13 @@ def validate_upload(contents, filename):
     # 4. Validar MIME type com puremagic
     try:
         # puremagic detecta o tipo MIME pelos magic bytes
-        mime_types = puremagic.from_buffer(contents_bytes)
+        mime_types = puremagic.from_string(contents_bytes, True)
         if mime_types:
-            file_mime = mime_types[0].mime_type
+            file_mime = mime_types
         else:
             # Se não detectar, assume application/octet-stream (rejeitará)
             file_mime = 'application/octet-stream'
-        
+            
         if file_mime not in ALLOWED_MIME_TYPES:
             raise ValueError(f"MIME type não permitido: {file_mime}")
     except ValueError:
