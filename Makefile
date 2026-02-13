@@ -1,5 +1,5 @@
 # Makefile - Setup virtual environment e tarefas comuns
-.PHONY: help install dev test run desktop prod clean venv
+.PHONY: help install dev test run desktop prod audit clean venv
 
 PYTHON := python
 VENV_DIR := venv
@@ -11,8 +11,8 @@ help:
 	@echo "=========================================="
 	@echo ""
 	@echo "Setup:"
-	@echo "  make install     - Criar venv e instalar dependências"
-	@echo "  make dev         - Instalar dependências de desenvolvimento"
+	@echo "  make install      - Criar venv e instalar dependências"
+	@echo "  make install-dev  - Instalar dependências de desenvolvimento"
 	@echo ""
 	@echo "Execução:"
 	@echo "  make run         - Rodar aplicação em desenvolvimento (DEBUG=True)"
@@ -21,6 +21,9 @@ help:
 	@echo ""
 	@echo "Testes:"
 	@echo "  make test        - Rodar pytest com cobertura"
+	@echo ""
+	@echo "Segurança:"
+	@echo "  make audit       - Auditar vulnerabilidades em dependências"
 	@echo ""
 	@echo "Limpeza:"
 	@echo "  make clean       - Remover venv e arquivos temporários"
@@ -40,29 +43,35 @@ install: $(VENV_DIR)
 	@echo "✅ Dependências instaladas"
 
 # Dev: instalar dependências de desenvolvimento
-dev: $(VENV_DIR)
+install-dev: $(VENV_DIR)
 	@echo "📦 Instalando dependências de desenvolvimento..."
+	$(VENV_PIP) install --upgrade pip
 	$(VENV_PIP) install -r requirements.txt -r requirements-dev.txt
 	@echo "✅ Dependências de dev instaladas"
 
 # Test: rodar testes com pytest
-test: $(VENV_DIR)
+test: install-dev
 	@echo "🧪 Rodando testes..."
 	$(VENV_PYTHON) -m pytest --cov
 
+# Audit: auditar vulnerabilidades em dependências
+audit: install-dev
+	@echo "🔒 Auditando vulnerabilidades em dependências..."
+	$(VENV_DIR)/bin/pip-audit -r requirements.txt --desc --strict
+
 # Run: rodar aplicação em desenvolvimento
-run: $(VENV_DIR)
+run: install
 	@echo "🚀 Iniciando aplicação..."
 	$(VENV_PYTHON) -c "import os; os.environ['DEBUG']='True'" && \
 	DEBUG=True $(VENV_PYTHON) app.py
 
 # Desktop: rodar em modo desktop com waitress
-desktop: $(VENV_DIR)
+desktop: install
 	@echo "🖥️  Iniciando em modo desktop com waitress..."
 	$(VENV_PYTHON) -c "from waitress import serve; from app import app; serve(app.server, host='0.0.0.0', port=7860, threads=4, channel_timeout=120)"
 
 # Prod: rodar com gunicorn
-prod: $(VENV_DIR)
+prod: install
 	@echo "🚀 Iniciando em modo produção..."
 	$(VENV_PYTHON) -m gunicorn -c gunicorn.conf.py server:server
 
