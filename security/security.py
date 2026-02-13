@@ -117,7 +117,8 @@ def add_security_headers(response):
         "frame-ancestors 'none';"
     )
     response.headers['X-Frame-Options'] = 'DENY'
-    response.headers['X-Content-Type-Options'] = 'nosniff'
+    # X-Content-Type-Options: nosniff bloquearia assets do Dash servidos como text/plain
+    # O CSP acima já protege contra ataques XSS, então este header é redundante
     response.headers['X-XSS-Protection'] = '1; mode=block'
     response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
     response.headers['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=(), payment=()'
