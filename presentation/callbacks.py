@@ -4,7 +4,7 @@ import pandas as pd
 import base64
 import time
 from data.parsers_secure import parse_xml_scores
-from security.security import validate_upload, sanitize_filter_input, log_suspicious_activity
+from security.security import validate_upload, sanitize_filter_input, log_suspicious_activity, MAX_FILE_SIZE
 from flask_limiter.util import get_remote_address
 from presentation.styles import (
     CONTENT_PADDING, EVENTS_PADDING, ERROR_MESSAGE, SUCCESS_MESSAGE,
@@ -19,10 +19,11 @@ from business.analytics import (
     update_consistency_chart, update_tire_degradation_chart, update_pace_decay_chart,
     update_strategy_gantt_chart
 )
+from data.track_flags import get_country_flag
+from presentation.components import create_standings_table
 
 def validate_file_size(decoded_content):
     """Valida se o tamanho do arquivo está dentro do limite permitido"""
-    from security.security import MAX_FILE_SIZE
     file_size_mb = len(decoded_content) / (1024 * 1024)
     max_size_mb = MAX_FILE_SIZE / (1024 * 1024)
     if file_size_mb > max_size_mb:
@@ -161,13 +162,15 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
         [Output('stored-data', 'data'),
          Output('stored-race-info', 'data'),
          Output('stored-incidents', 'data'),
-         Output('upload-status', 'children')],
+         Output('upload-status', 'children'),
+         Output('standings-lap-store', 'data', allow_duplicate=True)],
         Input('upload-data', 'contents'),
-        State('upload-data', 'filename')
+        State('upload-data', 'filename'),
+        prevent_initial_call=True
     )
     def update_data(contents, filename):
         if contents is None:
-            return initial_df.to_dict('records'), initial_race_info, initial_incidents, ''
+            return initial_df.to_dict('records'), initial_race_info, initial_incidents, '', None
         
         try:
             content_type, content_string = contents.split(',')
@@ -183,7 +186,7 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
                         html.Span(f'{filename}: {error_msg}', style=ERROR_TEXT)
                     ], style={**ERROR_MESSAGE, **NOTIFICATION_BASE}),
                     key=f'error-{time.time()}'
-                )
+                ), None
             
             # Validate upload (extension, MIME type, XML structure)
             safe_filename, content_str = validate_upload(decoded, filename)
@@ -195,27 +198,27 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
                 html.Div([
                     html.Span('✅ ', style=ICON_LARGE),
                     html.Span(f'{filename} loaded successfully!', style=SUCCESS_TEXT)
-                ], style={**SUCCESS_MESSAGE, **NOTIFICATION_BASE}),
-                key=f'success-{time.time()}'
-            )
+                ], style={**SUCCESS_MESSAGE, **NOTIFICATION_BASE})
+                #, key=f'success-{time.time()}'
+            ), None
         except ValueError as e:
             log_suspicious_activity('unknown', 'invalid_file', f'{filename}: {str(e)}')
             return initial_df.to_dict('records'), initial_race_info, initial_incidents, html.Div(
                 html.Div([
                     html.Span('❌ ', style=ICON_LARGE),
                     html.Span(f'Error: {str(e)}', style=ERROR_TEXT)
-                ], style={**ERROR_MESSAGE, **NOTIFICATION_BASE}),
-                key=f'error-{time.time()}'
-            )
+                ], style={**ERROR_MESSAGE, **NOTIFICATION_BASE})
+                #, key=f'error-{time.time()}'
+            ), None
         except Exception as e:
             log_suspicious_activity('unknown', 'parse_error', f'{filename}: {str(e)}')
             return initial_df.to_dict('records'), initial_race_info, initial_incidents, html.Div(
                 html.Div([
                     html.Span('❌ ', style=ICON_LARGE),
                     html.Span(f'Error loading {filename}: {str(e)}', style=ERROR_TEXT)
-                ], style={**ERROR_MESSAGE, **NOTIFICATION_BASE}),
-                key=f'error-{time.time()}'
-            )
+                ], style={**ERROR_MESSAGE, **NOTIFICATION_BASE})
+                #, key=f'error-{time.time()}'
+            ), None
 
     @app.callback(
         [Output('class-filter', 'options'),
@@ -250,8 +253,6 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
     def update_race_info(race_info):
         if not race_info:
             return ''
-        
-        from data.track_flags import get_country_flag
         
         race_time = race_info.get('time', '0')
         race_laps = race_info.get('laps', '0')
@@ -365,7 +366,6 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
          Input('standings-filtered-data', 'data')]
     )
     def update_standings_table(selected_lap, data):
-        from presentation.components import create_standings_table
         return create_standings_table(selected_lap, data)
 
     @app.callback(
