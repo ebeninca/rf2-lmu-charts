@@ -168,6 +168,19 @@ class TestParseXmlScores:
         df, _, _ = parse_xml_scores(xml)
         assert df[df['Lap'] == 1]['ET'].iloc[0] == 0
     
+    def test_missing_attribute_handled_gracefully(self):
+        """Testa se a falta de um atributo é tratada, resultando em valor padrão"""
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+<RaceResults>
+    <Driver>
+        <Name>Test Driver</Name>
+        <GridPos>1</GridPos>
+        <Lap num="1" p="1">120.0</Lap>
+    </Driver>
+</RaceResults>"""
+        df, _, _ = parse_xml_scores(xml)
+        assert df[df['Lap'] == 1]['ET'].iloc[0] == 0
+    
     def test_grid_position_creates_lap_zero(self, sample_xml):
         """Testa se GridPos cria lap 0"""
         df, _, _ = parse_xml_scores(sample_xml)
