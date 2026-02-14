@@ -70,7 +70,7 @@ class TestLaptimeChart:
     def test_empty_dataframe_returns_message(self):
         """Testa se DataFrame vazio retorna mensagem"""
         fig = update_laptime_chart([], None, None)
-        assert 'No data available' in fig.layout.annotations[0].text
+        assert 'No lap time data available' in fig.layout.annotations[0].text
     
     def test_only_positive_laptimes(self, sample_dataframe):
         """Testa se apenas lap times positivos são incluídos"""

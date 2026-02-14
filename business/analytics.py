@@ -1,5 +1,10 @@
 import plotly.graph_objs as go
 import pandas as pd
+from business.utils import (
+    format_lap_time_hover, format_lap_time_tick,
+    format_gap_time_hover, format_gap_time_tick,
+    prepare_chart_data, empty_figure, chart_decorator
+)
 
 
 def update_strategy_gantt_chart(data, selected_drivers, selected_classes):
@@ -156,25 +161,15 @@ def update_strategy_gantt_chart(data, selected_drivers, selected_classes):
 
 
 def update_position_chart(data, selected_drivers, selected_classes):
-    df = pd.DataFrame(data)
+    df, is_empty = prepare_chart_data(data, selected_drivers, selected_classes)
     
-    if df.empty:
-        return go.Figure().add_annotation(text="No data available", showarrow=False)
-    
-    if selected_drivers:
-        df = df[df['Driver'].isin(selected_drivers)]
-    if selected_classes:
-        df = df[df['Class'].isin(selected_classes)]
-    
-    df_pos = df.copy()
-    
-    if df_pos.empty:
-        return go.Figure().add_annotation(text="No data available", showarrow=False)
+    if is_empty:
+        return empty_figure()
     
     fig = go.Figure()
     
-    for driver in df_pos['Driver'].unique():
-        driver_data = df_pos[df_pos['Driver'] == driver].sort_values('Lap')
+    for driver in df['Driver'].unique():
+        driver_data = df[df['Driver'] == driver].sort_values('Lap')
         fig.add_trace(go.Scatter(
             x=driver_data['Lap'],
             y=driver_data['Position'],
@@ -196,30 +191,16 @@ def update_position_chart(data, selected_drivers, selected_classes):
 
 
 def update_gap_chart(data, selected_drivers, selected_classes):
-    df = pd.DataFrame(data)
+    df, is_empty = prepare_chart_data(data, selected_drivers, selected_classes)
     
-    if df.empty:
-        return go.Figure().add_annotation(text="No data available", showarrow=False)
-    
-    if selected_drivers:
-        df = df[df['Driver'].isin(selected_drivers)]
-    if selected_classes:
-        df = df[df['Class'].isin(selected_classes)]
-    
-    if df.empty:
-        return go.Figure().add_annotation(text="No data available", showarrow=False)
+    if is_empty:
+        return empty_figure()
     
     fig = go.Figure()
     
     for driver in df['Driver'].unique():
         driver_data = df[df['Driver'] == driver].sort_values('Lap')
-        
-        # Format gap times as mm:ss.sss
-        formatted_gaps = []
-        for gap in driver_data['GapToLeader']:
-            minutes = int(gap // 60)
-            seconds = gap % 60
-            formatted_gaps.append(f"{minutes}:{seconds:06.3f}")
+        formatted_gaps = [format_gap_time_hover(gap) for gap in driver_data['GapToLeader']]
         
         fig.add_trace(go.Scatter(
             x=driver_data['Lap'],
@@ -235,7 +216,7 @@ def update_gap_chart(data, selected_drivers, selected_classes):
     max_gap = df['GapToLeader'].max()
     tick_interval = 30  # 30 seconds
     tick_vals = list(range(int(min_gap), int(max_gap) + tick_interval, tick_interval))
-    tick_texts = [f"{int(t//60):01d}:{int(t%60):02d}" for t in tick_vals]
+    tick_texts = [format_gap_time_tick(t) for t in tick_vals]
     
     fig.update_layout(
         title='Gap to Leader by Lap',
@@ -254,30 +235,16 @@ def update_gap_chart(data, selected_drivers, selected_classes):
 
 
 def update_class_gap_chart(data, selected_drivers, selected_classes):
-    df = pd.DataFrame(data)
+    df, is_empty = prepare_chart_data(data, selected_drivers, selected_classes)
     
-    if df.empty:
-        return go.Figure().add_annotation(text="No data available", showarrow=False)
-    
-    if selected_drivers:
-        df = df[df['Driver'].isin(selected_drivers)]
-    if selected_classes:
-        df = df[df['Class'].isin(selected_classes)]
-    
-    if df.empty:
-        return go.Figure().add_annotation(text="No data available", showarrow=False)
+    if is_empty:
+        return empty_figure()
     
     fig = go.Figure()
     
     for driver in df['Driver'].unique():
         driver_data = df[df['Driver'] == driver].sort_values('Lap')
-        
-        # Format gap times as mm:ss.sss
-        formatted_gaps = []
-        for gap in driver_data['GapToClassLeader']:
-            minutes = int(gap // 60)
-            seconds = gap % 60
-            formatted_gaps.append(f"{minutes}:{seconds:06.3f}")
+        formatted_gaps = [format_gap_time_hover(gap) for gap in driver_data['GapToClassLeader']]
         
         fig.add_trace(go.Scatter(
             x=driver_data['Lap'],
@@ -293,7 +260,7 @@ def update_class_gap_chart(data, selected_drivers, selected_classes):
     max_gap = df['GapToClassLeader'].max()
     tick_interval = 30  # 30 seconds
     tick_vals = list(range(int(min_gap), int(max_gap) + tick_interval, tick_interval))
-    tick_texts = [f"{int(t//60):01d}:{int(t%60):02d}" for t in tick_vals]
+    tick_texts = [format_gap_time_tick(t) for t in tick_vals]
     
     fig.update_layout(
         title='Gap to Class Leader by Lap',
@@ -312,28 +279,22 @@ def update_class_gap_chart(data, selected_drivers, selected_classes):
 
 
 def update_laptime_chart(data, selected_drivers, selected_classes):
-    df = pd.DataFrame(data)
+    def additional_filter(df):
+        return df[df['LapTime'] > 0]
     
+    df, empty_result = prepare_chart_data(data, selected_drivers, selected_classes)
+    if empty_result:
+        return empty_figure("No lap time data available")
+    
+    df = additional_filter(df)
     if df.empty:
-        return go.Figure().add_annotation(text="No data available", showarrow=False)
-    
-    if selected_drivers:
-        df = df[df['Driver'].isin(selected_drivers)]
-    if selected_classes:
-        df = df[df['Class'].isin(selected_classes)]
-    
-    df = df[df['LapTime'] > 0]
-    
-    if df.empty:
-        return go.Figure().add_annotation(text="No lap time data available", showarrow=False)
+        return empty_figure("No lap time data available")
     
     fig = go.Figure()
     
     for driver in df['Driver'].unique():
         driver_data = df[df['Driver'] == driver].sort_values('Lap')
-        minutes = (driver_data['LapTime'] // 60).astype(int)
-        seconds = driver_data['LapTime'] % 60
-        formatted_times = [f"{int(m):02d}:{s:06.3f}" for m, s in zip(minutes, seconds)]
+        formatted_times = [format_lap_time_hover(t) for t in driver_data['LapTime']]
         
         fig.add_trace(go.Scatter(
             x=driver_data['Lap'],
@@ -344,6 +305,9 @@ def update_laptime_chart(data, selected_drivers, selected_classes):
             hovertemplate='%{fullData.name}<br>Lap: %{x}<br>Time: %{text}<extra></extra>'
         ))
     
+    tick_vals = [i*10 for i in range(int(df['LapTime'].min()//10), int(df['LapTime'].max()//10)+2)]
+    tick_texts = [format_lap_time_tick(t) for t in tick_vals]
+    
     fig.update_layout(
         title='Lap Times',
         xaxis_title='Lap',
@@ -352,8 +316,8 @@ def update_laptime_chart(data, selected_drivers, selected_classes):
         height=600,
         yaxis=dict(
             tickmode='array',
-            tickvals=[i*10 for i in range(int(df['LapTime'].min()//10), int(df['LapTime'].max()//10)+2)],
-            ticktext=[f"{int(t//60):02d}:{int(t%60):02d}" for t in [i*10 for i in range(int(df['LapTime'].min()//10), int(df['LapTime'].max()//10)+2)]]
+            tickvals=tick_vals,
+            ticktext=tick_texts
         )
     )
     
@@ -364,7 +328,7 @@ def update_laptime_no_pit_chart(data, selected_drivers, selected_classes):
     df = pd.DataFrame(data)
     
     if df.empty:
-        return go.Figure().add_annotation(text="No data available", showarrow=False)
+        return empty_figure()
     
     all_data = pd.DataFrame(data)
     exclude_set = set()
@@ -385,15 +349,13 @@ def update_laptime_no_pit_chart(data, selected_drivers, selected_classes):
     df = df[~df.apply(lambda row: (row['Driver'], row['Lap']) in exclude_set, axis=1)]
     
     if df.empty:
-        return go.Figure().add_annotation(text="No lap time data available", showarrow=False)
+        return empty_figure("No lap time data available")
     
     fig = go.Figure()
     
     for driver in df['Driver'].unique():
         driver_data = df[df['Driver'] == driver].sort_values('Lap')
-        minutes = (driver_data['LapTime'] // 60).astype(int)
-        seconds = driver_data['LapTime'] % 60
-        formatted_times = [f"{int(m):02d}:{s:06.3f}" for m, s in zip(minutes, seconds)]
+        formatted_times = [format_lap_time_hover(t) for t in driver_data['LapTime']]
         
         fig.add_trace(go.Scatter(
             x=driver_data['Lap'],
@@ -404,6 +366,9 @@ def update_laptime_no_pit_chart(data, selected_drivers, selected_classes):
             hovertemplate='%{fullData.name}<br>Lap: %{x}<br>Time: %{text}<extra></extra>'
         ))
     
+    tick_vals = [i*10 for i in range(int(df['LapTime'].min()//10), int(df['LapTime'].max()//10)+2)]
+    tick_texts = [format_lap_time_tick(t) for t in tick_vals]
+    
     fig.update_layout(
         title='Lap Times (Excluding Pit Laps)',
         xaxis_title='Lap',
@@ -412,8 +377,8 @@ def update_laptime_no_pit_chart(data, selected_drivers, selected_classes):
         height=600,
         yaxis=dict(
             tickmode='array',
-            tickvals=[i*10 for i in range(int(df['LapTime'].min()//10), int(df['LapTime'].max()//10)+2)],
-            ticktext=[f"{int(t//60):02d}:{int(t%60):02d}" for t in [i*10 for i in range(int(df['LapTime'].min()//10), int(df['LapTime'].max()//10)+2)]]
+            tickvals=tick_vals,
+            ticktext=tick_texts
         )
     )
     
@@ -421,10 +386,10 @@ def update_laptime_no_pit_chart(data, selected_drivers, selected_classes):
 
 
 def update_fuel_chart(data, selected_drivers, selected_classes):
-    df = pd.DataFrame(data)
+    df, is_empty = prepare_chart_data(data, selected_drivers, selected_classes)
     
-    if df.empty:
-        return go.Figure().add_annotation(text="No data available", showarrow=False)
+    if is_empty:
+        return empty_figure()
     
     all_data = pd.DataFrame(data)
     exclude_set = set()
@@ -434,16 +399,11 @@ def update_fuel_chart(data, selected_drivers, selected_classes):
         for pit_lap in pit_laps:
             exclude_set.add((driver, pit_lap + 1))
     
-    if selected_drivers:
-        df = df[df['Driver'].isin(selected_drivers)]
-    if selected_classes:
-        df = df[df['Class'].isin(selected_classes)]
-    
     df = df[df['FuelUsed'] > 0]
     df = df[~df.apply(lambda row: (row['Driver'], row['Lap']) in exclude_set, axis=1)]
     
     if df.empty:
-        return go.Figure().add_annotation(text="No fuel data available", showarrow=False)
+        return empty_figure("No fuel data available")
     
     fig = go.Figure()
     
@@ -469,10 +429,10 @@ def update_fuel_chart(data, selected_drivers, selected_classes):
 
 
 def update_ve_chart(data, selected_drivers, selected_classes):
-    df = pd.DataFrame(data)
+    df, is_empty = prepare_chart_data(data, selected_drivers, selected_classes)
     
-    if df.empty:
-        return go.Figure().add_annotation(text="No data available", showarrow=False)
+    if is_empty:
+        return empty_figure()
     
     all_data = pd.DataFrame(data)
     exclude_set = set()
@@ -482,16 +442,11 @@ def update_ve_chart(data, selected_drivers, selected_classes):
         for pit_lap in pit_laps:
             exclude_set.add((driver, pit_lap + 1))
     
-    if selected_drivers:
-        df = df[df['Driver'].isin(selected_drivers)]
-    if selected_classes:
-        df = df[df['Class'].isin(selected_classes)]
-    
     df = df[df['VE'] > 0]
     df = df[~df.apply(lambda row: (row['Driver'], row['Lap']) in exclude_set, axis=1)]
     
     if df.empty:
-        return go.Figure().add_annotation(text="No virtual energy data available", showarrow=False)
+        return empty_figure("No virtual energy data available")
     
     fig = go.Figure()
     
@@ -518,10 +473,10 @@ def update_ve_chart(data, selected_drivers, selected_classes):
 
 
 def update_tire_wear_chart(data, selected_drivers, selected_classes):
-    df = pd.DataFrame(data)
+    df, is_empty = prepare_chart_data(data, selected_drivers, selected_classes)
     
-    if df.empty:
-        return go.Figure().add_annotation(text="No data available", showarrow=False)
+    if is_empty:
+        return empty_figure()
     
     all_data = pd.DataFrame(data)
     exclude_set = set()
@@ -531,16 +486,11 @@ def update_tire_wear_chart(data, selected_drivers, selected_classes):
         for pit_lap in pit_laps:
             exclude_set.add((driver, pit_lap + 1))
     
-    if selected_drivers:
-        df = df[df['Driver'].isin(selected_drivers)]
-    if selected_classes:
-        df = df[df['Class'].isin(selected_classes)]
-    
     df = df[df['TireWear'] > 0]
     df = df[~df.apply(lambda row: (row['Driver'], row['Lap']) in exclude_set, axis=1)]
     
     if df.empty:
-        return go.Figure().add_annotation(text="No tire wear data available", showarrow=False)
+        return empty_figure("No tire wear data available")
     
     fig = go.Figure()
     
@@ -567,20 +517,15 @@ def update_tire_wear_chart(data, selected_drivers, selected_classes):
 
 
 def update_fuel_level_chart(data, selected_drivers, selected_classes):
-    df = pd.DataFrame(data)
+    df, is_empty = prepare_chart_data(data, selected_drivers, selected_classes)
     
-    if df.empty:
-        return go.Figure().add_annotation(text="No data available", showarrow=False)
-    
-    if selected_drivers:
-        df = df[df['Driver'].isin(selected_drivers)]
-    if selected_classes:
-        df = df[df['Class'].isin(selected_classes)]
+    if is_empty:
+        return empty_figure()
     
     df = df[df['FuelLevel'] > 0]
     
     if df.empty:
-        return go.Figure().add_annotation(text="No fuel level data available", showarrow=False)
+        return empty_figure("No fuel level data available")
     
     fig = go.Figure()
     
@@ -606,20 +551,15 @@ def update_fuel_level_chart(data, selected_drivers, selected_classes):
 
 
 def update_ve_level_chart(data, selected_drivers, selected_classes):
-    df = pd.DataFrame(data)
+    df, is_empty = prepare_chart_data(data, selected_drivers, selected_classes)
     
-    if df.empty:
-        return go.Figure().add_annotation(text="No data available", showarrow=False)
-    
-    if selected_drivers:
-        df = df[df['Driver'].isin(selected_drivers)]
-    if selected_classes:
-        df = df[df['Class'].isin(selected_classes)]
+    if is_empty:
+        return empty_figure()
     
     df = df[df['VELevel'] > 0]
     
     if df.empty:
-        return go.Figure().add_annotation(text="No virtual energy level data available", showarrow=False)
+        return empty_figure("No virtual energy level data available")
     
     fig = go.Figure()
     
@@ -645,10 +585,10 @@ def update_ve_level_chart(data, selected_drivers, selected_classes):
 
 
 def update_tire_consumption_chart(data, selected_drivers, selected_classes):
-    df = pd.DataFrame(data)
+    df, is_empty = prepare_chart_data(data, selected_drivers, selected_classes)
     
-    if df.empty:
-        return go.Figure().add_annotation(text="No data available", showarrow=False)
+    if is_empty:
+        return empty_figure()
     
     all_data = pd.DataFrame(data)
     exclude_set = set()
@@ -658,16 +598,11 @@ def update_tire_consumption_chart(data, selected_drivers, selected_classes):
         for pit_lap in pit_laps:
             exclude_set.add((driver, pit_lap + 1))
     
-    if selected_drivers:
-        df = df[df['Driver'].isin(selected_drivers)]
-    if selected_classes:
-        df = df[df['Class'].isin(selected_classes)]
-    
     df = df[df['TireWear'] > 0]
     df = df[~df.apply(lambda row: (row['Driver'], row['Lap']) in exclude_set, axis=1)]
     
     if df.empty:
-        return go.Figure().add_annotation(text="No tire data available", showarrow=False)
+        return empty_figure("No tire data available")
     
     fig = go.Figure()
     
@@ -709,22 +644,20 @@ def update_tire_consumption_chart(data, selected_drivers, selected_classes):
 
 
 def update_tire_degradation_chart(data, selected_drivers, selected_classes):
-    df = pd.DataFrame(data)
-    
-    if df.empty:
-        return go.Figure().add_annotation(text="No data available", showarrow=False)
-    
     all_data = pd.DataFrame(data)
     
-    if selected_drivers:
-        df = df[df['Driver'].isin(selected_drivers)]
-    if selected_classes:
-        df = df[df['Class'].isin(selected_classes)]
+    if all_data.empty:
+        return empty_figure()
+    
+    df, is_empty = prepare_chart_data(data, selected_drivers, selected_classes)
+    
+    if is_empty:
+        return empty_figure()
     
     df = df[(df['TireWear'] > 0) & (df['LapTime'] > 0)].copy()
     
     if df.empty:
-        return go.Figure().add_annotation(text="No tire or lap time data available", showarrow=False)
+        return empty_figure("No tire or lap time data available")
     
     fig = go.Figure()
     
@@ -783,22 +716,20 @@ def update_tire_degradation_chart(data, selected_drivers, selected_classes):
 
 def update_pace_decay_chart(data, selected_drivers, selected_classes):
     """Cria um scatter plot de degradação de pace colorido por piloto"""
-    df = pd.DataFrame(data)
-    
-    if df.empty:
-        return go.Figure().add_annotation(text="No data available", showarrow=False)
-    
     all_data = pd.DataFrame(data)
     
-    if selected_drivers:
-        df = df[df['Driver'].isin(selected_drivers)]
-    if selected_classes:
-        df = df[df['Class'].isin(selected_classes)]
+    if all_data.empty:
+        return empty_figure()
+    
+    df, is_empty = prepare_chart_data(data, selected_drivers, selected_classes)
+    
+    if is_empty:
+        return empty_figure()
     
     df = df[(df['TireWear'] > 0) & (df['LapTime'] > 0)].copy()
     
     if df.empty:
-        return go.Figure().add_annotation(text="No tire or lap time data available", showarrow=False)
+        return empty_figure("No tire or lap time data available")
     
     fig = go.Figure()
     
@@ -879,12 +810,16 @@ def update_pace_decay_chart(data, selected_drivers, selected_classes):
 
 
 def update_consistency_chart(data, selected_drivers, selected_classes):
-    df = pd.DataFrame(data)
-    
-    if df.empty:
-        return go.Figure().add_annotation(text="No data available", showarrow=False)
-    
     all_data = pd.DataFrame(data)
+    
+    if all_data.empty:
+        return empty_figure()
+    
+    df, is_empty = prepare_chart_data(data, selected_drivers, selected_classes)
+    
+    if is_empty:
+        return empty_figure()
+    
     exclude_set = set()
     for driver in all_data['Driver'].unique():
         driver_data = all_data[all_data['Driver'] == driver]
@@ -893,16 +828,11 @@ def update_consistency_chart(data, selected_drivers, selected_classes):
             exclude_set.add((driver, pit_lap))
             exclude_set.add((driver, pit_lap + 1))
     
-    if selected_drivers:
-        df = df[df['Driver'].isin(selected_drivers)]
-    if selected_classes:
-        df = df[df['Class'].isin(selected_classes)]
-    
     df = df[df['LapTime'] > 0].copy()
     df = df[~df.apply(lambda row: (row['Driver'], row['Lap']) in exclude_set, axis=1)]
     
     if df.empty:
-        return go.Figure().add_annotation(text="No lap time data available", showarrow=False)
+        return empty_figure("No lap time data available")
     
     fig = go.Figure()
     
@@ -912,7 +842,7 @@ def update_consistency_chart(data, selected_drivers, selected_classes):
         if len(driver_data) < 2:
             continue
         
-        formatted_times = [f"{int(t//60):01d}:{int(t%60):02d}.{int((t%1)*1000):03d}" for t in driver_data]
+        formatted_times = [format_lap_time_hover(t) for t in driver_data]
         
         fig.add_trace(go.Box(
             y=driver_data,
@@ -926,7 +856,7 @@ def update_consistency_chart(data, selected_drivers, selected_classes):
     max_time = df['LapTime'].max()
     tick_interval = 5
     tick_vals = list(range(int(min_time), int(max_time) + tick_interval, tick_interval))
-    tick_texts = [f"{int(t//60):01d}:{int(t%60):02d}.{int((t%1)*1000):03d}" for t in tick_vals]
+    tick_texts = [format_lap_time_hover(t) for t in tick_vals]
     
     fig.update_layout(
         title='Lap Time Consistency by Driver',
