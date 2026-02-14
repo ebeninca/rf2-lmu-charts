@@ -23,7 +23,7 @@ app.config.suppress_callback_exceptions = True
 limiter = Limiter(
     app=app.server,
     key_func=get_remote_address,
-    default_limits=["200 per day", "50 per hour"],
+    default_limits=["86400 per day", "3600 per hour"],
     storage_uri="memory://",
     strategy="fixed-window"
 )
