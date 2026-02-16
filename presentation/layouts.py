@@ -1,5 +1,4 @@
 from dash import html, dcc
-import pandas as pd
 from presentation.styles import ICON_LARGE
 
 # Filter styles

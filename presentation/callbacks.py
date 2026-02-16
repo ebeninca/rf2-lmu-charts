@@ -4,12 +4,11 @@ import pandas as pd
 import base64
 import time
 from data.parsers_secure import parse_xml_scores
-from security.security import validate_upload, sanitize_filter_input, log_suspicious_activity, MAX_FILE_SIZE
-from flask_limiter.util import get_remote_address
+from security.security import validate_upload, log_suspicious_activity, MAX_FILE_SIZE
 from presentation.styles import (
     CONTENT_PADDING, EVENTS_PADDING, ERROR_MESSAGE, SUCCESS_MESSAGE,
     ICON_LARGE, ICON_MARGIN, ICON_MARGIN_20, ERROR_TEXT, SUCCESS_TEXT,
-    FLAG_ICON, TABLE_HEADER, TABLE_CELL, TABLE_CELL_LEFT, NOTIFICATION_BASE
+    FLAG_ICON, TABLE_HEADER, TABLE_CELL_LEFT, NOTIFICATION_BASE
 )
 from business.analytics import (
     update_position_chart, update_gap_chart, update_class_gap_chart,

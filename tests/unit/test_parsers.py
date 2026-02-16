@@ -1,7 +1,7 @@
 import pytest
 import pandas as pd
 import xml.etree.ElementTree as ET
-from data.parsers import parse_xml_scores
+from data.parsers_secure import parse_xml_scores
 
 
 class TestParseXmlScores:
@@ -27,7 +27,7 @@ class TestParseXmlScores:
     
     def test_parse_invalid_xml_raises_exception(self, invalid_xml):
         """Testa se XML malformado levanta exceção"""
-        with pytest.raises(ET.ParseError):
+        with pytest.raises(ValueError):
             parse_xml_scores(invalid_xml)
     
     def test_extracts_race_info(self, sample_xml):

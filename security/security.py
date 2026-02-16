@@ -1,7 +1,6 @@
 import os
 import re
 import logging
-import io
 import xml.etree.ElementTree as ET
 import puremagic
 from logging.handlers import RotatingFileHandler

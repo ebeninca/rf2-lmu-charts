@@ -24,9 +24,9 @@ def invalid_xml():
     return """<?xml version="1.0" encoding="UTF-8"?>
 <RaceResults>
     <Driver>
-        <Name>Test</Name>
+        <Name>Test
     </Driver>
-"""
+</RaceResults>"""
 
 
 @pytest.fixture

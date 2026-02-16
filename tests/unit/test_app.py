@@ -94,7 +94,7 @@ class TestAppModules:
     
     def test_data_parsers_imported(self):
         """Testa se data.parsers é importado"""
-        from data.parsers import parse_xml_scores
+        from data.parsers_secure import parse_xml_scores
         assert parse_xml_scores is not None
     
     def test_presentation_layouts_imported(self):

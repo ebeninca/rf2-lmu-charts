@@ -1,6 +1,6 @@
 import pytest
 import pandas as pd
-from data.parsers import parse_xml_scores
+from data.parsers_secure import parse_xml_scores
 from business.analytics import update_position_chart, update_gap_chart
 from presentation.components import create_standings_table
 from presentation.layouts import create_main_layout

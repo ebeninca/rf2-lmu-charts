@@ -25,7 +25,7 @@ class TestUpdateData:
         contents = f"data:text/xml;base64,{encoded}"
         
         # Importa função de parsing
-        from data.parsers import parse_xml_scores
+        from data.parsers_secure import parse_xml_scores
         df, race_info, incidents = parse_xml_scores(sample_xml)
         
         assert not df.empty
@@ -50,10 +50,9 @@ class TestUpdateData:
     
     def test_invalid_xml_returns_error(self, invalid_xml):
         """Testa se XML inválido retorna erro"""
-        from data.parsers import parse_xml_scores
-        import xml.etree.ElementTree as ET
+        from data.parsers_secure import parse_xml_scores
         
-        with pytest.raises(ET.ParseError):
+        with pytest.raises(ValueError):
             parse_xml_scores(invalid_xml)
 
 
