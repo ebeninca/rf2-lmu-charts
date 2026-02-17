@@ -84,3 +84,48 @@ def sample_incidents():
         'incident': [{'et': '120.0', 'message': 'Contact between Driver One and Driver Two'}],
         'penalty': [{'et': '180.5', 'message': 'Driver Two: 5 second penalty'}]
     }
+
+
+@pytest.fixture
+def mock_xml_content():
+    """XML válido mínimo para testes"""
+    return b'''<?xml version="1.0"?>
+<RaceResults>
+    <Race Track="Spa" Laps="10" Time="3600"/>
+    <Driver Name="Driver1" Position="1">
+        <Lap Num="1" Time="90.5" Fuel="0.8"/>
+    </Driver>
+</RaceResults>'''
+
+
+@pytest.fixture
+def sample_xml_malformed():
+    """XML malformado para testes de erro"""
+    return '''<?xml version="1.0" encoding="utf-8"?>
+<RaceResults>
+    <Driver Name="Driver1">
+        <IncompleteTag>
+    </Driver>
+</RaceResults>'''
+
+
+@pytest.fixture
+def sample_xml_missing_fields():
+    """XML com campos faltando"""
+    return {
+        'track': None,
+        'course': 'Main Course',
+        'date': '2024-01-15 14:30:00',
+        'laps': '10',
+        'time': None,
+        'server': 'Test Server'
+    }
+
+
+@pytest.fixture
+def sample_xml_corrupted():
+    """XML corrompido"""
+    return '''<CorruptedData>
+    <InvalidEncoding></InvalidEncoding>
+    <BrokenStructure><<>>
+</CorruptedData>'''
