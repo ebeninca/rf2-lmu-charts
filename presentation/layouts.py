@@ -1,5 +1,6 @@
 from dash import html, dcc
 from presentation.styles import ICON_LARGE
+import os
 
 # Filter styles
 FILTER_LABEL = {'fontSize': '12px', 'marginBottom': '2px'}
@@ -8,6 +9,8 @@ FILTER_CONTAINER = {'display': 'inline-block', 'verticalAlign': 'top', 'padding'
 
 def create_main_layout(initial_df, initial_race_info, initial_incidents):
     """Cria o layout principal da aplicação"""
+    app_mode = os.getenv('APP_MODE', 'web').lower()
+    
     return html.Div([
         html.Div([
             html.H1([
@@ -20,13 +23,36 @@ def create_main_layout(initial_df, initial_race_info, initial_incidents):
             
             dcc.Upload(
                 id='upload-data',
-                children=html.Div(['Drag and Drop or ', html.A('Select XML File')]),
+                children=html.Div([
+                    'Drag and Drop or ',
+                    html.A('Select Multiple XML Files' if app_mode == 'desktop' else 'Select XML File')
+                ] if app_mode == 'desktop' else [
+                    'Drag and Drop or ',
+                    html.A('Select XML File')
+                ]),
                 style={
                     'width': '100%', 'height': '60px', 'lineHeight': '60px',
                     'borderWidth': '1px', 'borderStyle': 'dashed', 'borderRadius': '5px',
                     'textAlign': 'center', 'margin': '10px 0'
-                }
+                },
+                multiple=True if app_mode == 'desktop' else False
             ),
+            
+            html.P([
+                html.Span('💡 ', className='emoji-icon'),
+                html.Strong('Desktop Mode: '),
+                'Select multiple XML files from a folder (Ctrl+A or Cmd+A to select all)'
+            ], style={
+                'textAlign': 'center',
+                'fontSize': '12px',
+                'color': '#0066cc',
+                'margin': '5px 0',
+                'fontStyle': 'italic'
+            }) if app_mode == 'desktop' else html.Div(),
+            
+            html.Div(id='file-list-container', style={'display': 'none'}),
+            dcc.Store(id='folder-files-store'),
+            dcc.Store(id='last-folder-store', storage_type='local'),
             
             html.P([html.Span('📁', className='emoji-icon'), ' Maximum file size: 20MB • ', html.Span('🔒', className='emoji-icon'), ' Your data is not stored or persisted on the server - processed in memory only'], 
                    style={'textAlign': 'center', 'fontSize': '12px', 'color': '#666', 'margin': '0'}),
@@ -54,7 +80,8 @@ def create_main_layout(initial_df, initial_race_info, initial_incidents):
             dcc.Store(id='stored-incidents', data=initial_incidents),
             dcc.Store(id='standings-lap-store'),
             dcc.Store(id='laptimes-tab-store', data='laptimes-charts'),
-            dcc.Store(id='events-tab-store', data='events-chat')
+            dcc.Store(id='events-tab-store', data='events-chat'),
+            dcc.Store(id='app-mode', data=app_mode)
         ], className='main-container')
     ])
 

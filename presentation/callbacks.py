@@ -3,6 +3,8 @@ from dash import html, dcc, Input, Output, State
 import pandas as pd
 import base64
 import time
+import os
+import pickle
 from data.parsers_secure import parse_xml_scores
 from security.security import validate_upload, log_suspicious_activity, MAX_FILE_SIZE
 from presentation.styles import (
@@ -30,8 +32,287 @@ def validate_file_size(decoded_content):
         return False, file_size_mb, error_msg
     return True, file_size_mb, None
 
+# Server-side storage for file contents in desktop mode
+CACHE_FILE = '.desktop_file_cache.pkl'
+
+def load_cache():
+    """Load cache from disk"""
+    if os.path.exists(CACHE_FILE):
+        try:
+            with open(CACHE_FILE, 'rb') as f:
+                return pickle.load(f)
+        except:
+            return {}
+    return {}
+
+def save_cache(cache):
+    """Save cache to disk"""
+    try:
+        with open(CACHE_FILE, 'wb') as f:
+            pickle.dump(cache, f)
+    except:
+        pass
+
+server_file_cache = load_cache()
+server_metadata_cache = {}  # Store parsed metadata
+
+def extract_file_metadata(content):
+    """Extract metadata from XML file"""
+    try:
+        content_type, content_string = content.split(',')
+        decoded = base64.b64decode(content_string)
+        content_str = decoded.decode('utf-8')
+        df, race_info, _ = parse_xml_scores(content_str)
+        
+        # Extract metadata
+        event_type = race_info.get('session', 'Race')
+        circuit = race_info.get('track', 'Unknown')
+        classes = ', '.join(sorted(df['Class'].unique())) if not df.empty else '-'
+        num_cars = len(df['Driver'].unique()) if not df.empty else 0
+        
+        time_val = int(race_info.get('time', '0'))
+        laps_val = int(race_info.get('laps', '0'))
+        if time_val > 1000:
+            hours = time_val // 3600
+            minutes = (time_val % 3600) // 60
+            duration = f"{hours}h {minutes}min" if minutes > 0 else f"{hours}h"
+        elif time_val > 0:
+            duration = f"{time_val}min"
+        else:
+            duration = f"{laps_val} laps"
+        
+        event_name = race_info.get('server', '-')
+        
+        return {
+            'event_type': event_type,
+            'circuit': circuit,
+            'classes': classes,
+            'num_cars': num_cars,
+            'duration': duration,
+            'event_name': event_name
+        }
+    except:
+        return None
+
 def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
     """Registra todos os callbacks da aplicação"""
+    
+    # Initialize last-folder-store with cached files on app load
+    @app.callback(
+        Output('last-folder-store', 'data', allow_duplicate=True),
+        Input('app-mode', 'data'),
+        State('last-folder-store', 'data'),
+        prevent_initial_call='initial_duplicate'
+    )
+    def initialize_cache(app_mode, current_store):
+        if app_mode == 'desktop' and not current_store and server_file_cache:
+            return list(server_file_cache.keys())
+        return current_store if current_store else None
+    
+    @app.callback(
+        [Output('folder-files-store', 'data', allow_duplicate=True),
+         Output('file-list-container', 'children', allow_duplicate=True),
+         Output('file-list-container', 'style', allow_duplicate=True)],
+        [Input('last-folder-store', 'data'),
+         Input('app-mode', 'data')],
+        prevent_initial_call='initial_duplicate'
+    )
+    def restore_last_folder(last_folder_data, app_mode):
+        if app_mode != 'desktop':
+            return None, None, {'display': 'none'}
+        
+        # Try to restore from cache if no data in store
+        xml_files = last_folder_data if last_folder_data else list(server_file_cache.keys())
+        
+        if not xml_files:
+            return None, None, {'display': 'none'}
+        
+        # Extract metadata for each file
+        rows = []
+        for i, filename in enumerate(xml_files):
+            if filename not in server_metadata_cache:
+                content = server_file_cache.get(filename)
+                if content:
+                    server_metadata_cache[filename] = extract_file_metadata(content)
+            
+            meta = server_metadata_cache.get(filename)
+            if meta:
+                rows.append(html.Tr([
+                    html.Td(html.Button(
+                        filename,
+                        id={'type': 'file-button', 'index': i},
+                        n_clicks=0,
+                        style={'cursor': 'pointer', 'border': 'none', 'background': 'none', 'color': '#0066cc', 'textDecoration': 'underline', 'padding': '0'}
+                    ), style={'padding': '8px'}),
+                    html.Td(meta['event_type'], style={'padding': '8px'}),
+                    html.Td(meta['circuit'], style={'padding': '8px'}),
+                    html.Td(meta['classes'], style={'padding': '8px', 'fontSize': '11px'}),
+                    html.Td(str(meta['num_cars']), style={'padding': '8px', 'textAlign': 'center'}),
+                    html.Td(meta['duration'], style={'padding': '8px'}),
+                    html.Td(meta['event_name'], style={'padding': '8px', 'fontSize': '11px'})
+                ]))
+        
+        file_list = html.Div([
+            html.H3('Select a file:', style={'fontSize': '14px', 'marginBottom': '10px'}),
+            html.Table([
+                html.Thead(html.Tr([
+                    html.Th('File', style={'padding': '8px', 'textAlign': 'left', 'borderBottom': '2px solid #ddd'}),
+                    html.Th('Type', style={'padding': '8px', 'textAlign': 'left', 'borderBottom': '2px solid #ddd'}),
+                    html.Th('Circuit', style={'padding': '8px', 'textAlign': 'left', 'borderBottom': '2px solid #ddd'}),
+                    html.Th('Classes', style={'padding': '8px', 'textAlign': 'left', 'borderBottom': '2px solid #ddd'}),
+                    html.Th('Cars', style={'padding': '8px', 'textAlign': 'center', 'borderBottom': '2px solid #ddd'}),
+                    html.Th('Duration', style={'padding': '8px', 'textAlign': 'left', 'borderBottom': '2px solid #ddd'}),
+                    html.Th('Event', style={'padding': '8px', 'textAlign': 'left', 'borderBottom': '2px solid #ddd'})
+                ])),
+                html.Tbody(rows)
+            ], style={'width': '100%', 'borderCollapse': 'collapse', 'fontSize': '12px'})
+        ], style={'padding': '10px', 'border': '1px solid #ddd', 'borderRadius': '5px', 'marginTop': '10px', 'maxHeight': '200px', 'overflowY': 'auto'})
+        
+        return xml_files, file_list, {'display': 'block'}
+    
+    @app.callback(
+        [Output('folder-files-store', 'data'),
+         Output('file-list-container', 'children'),
+         Output('file-list-container', 'style'),
+         Output('upload-status', 'children', allow_duplicate=True),
+         Output('last-folder-store', 'data')],
+        [Input('upload-data', 'contents'),
+         Input('app-mode', 'data')],
+        [State('upload-data', 'filename')],
+        prevent_initial_call=True
+    )
+    def handle_folder_upload(contents_list, app_mode, filenames_list):
+        if app_mode != 'desktop' or not contents_list:
+            return None, None, {'display': 'none'}, '', None
+        
+        # Clear cache and store new files
+        server_file_cache.clear()
+        server_metadata_cache.clear()
+        xml_filenames = []
+        for content, filename in zip(contents_list, filenames_list):
+            if filename.lower().endswith(('.xml', '.xmlx')):
+                server_file_cache[filename] = content
+                xml_filenames.append(filename)
+                # Extract metadata
+                server_metadata_cache[filename] = extract_file_metadata(content)
+        
+        # Persist to disk
+        save_cache(server_file_cache)
+        
+        if not xml_filenames:
+            return None, None, {'display': 'none'}, html.Div(
+                html.Div([
+                    html.Span('❌ ', style=ICON_LARGE),
+                    html.Span('No XML files found in folder', style=ERROR_TEXT)
+                ], style={**ERROR_MESSAGE, **NOTIFICATION_BASE})
+            ), None
+        
+        # Create table with metadata
+        rows = []
+        for i, filename in enumerate(xml_filenames):
+            meta = server_metadata_cache.get(filename)
+            if meta:
+                rows.append(html.Tr([
+                    html.Td(html.Button(
+                        filename,
+                        id={'type': 'file-button', 'index': i},
+                        n_clicks=0,
+                        style={'cursor': 'pointer', 'border': 'none', 'background': 'none', 'color': '#0066cc', 'textDecoration': 'underline', 'padding': '0'}
+                    ), style={'padding': '8px'}),
+                    html.Td(meta['event_type'], style={'padding': '8px'}),
+                    html.Td(meta['circuit'], style={'padding': '8px'}),
+                    html.Td(meta['classes'], style={'padding': '8px', 'fontSize': '11px'}),
+                    html.Td(str(meta['num_cars']), style={'padding': '8px', 'textAlign': 'center'}),
+                    html.Td(meta['duration'], style={'padding': '8px'}),
+                    html.Td(meta['event_name'], style={'padding': '8px', 'fontSize': '11px'})
+                ]))
+        
+        file_list = html.Div([
+            html.H3('Select a file:', style={'fontSize': '14px', 'marginBottom': '10px'}),
+            html.Table([
+                html.Thead(html.Tr([
+                    html.Th('File', style={'padding': '8px', 'textAlign': 'left', 'borderBottom': '2px solid #ddd'}),
+                    html.Th('Type', style={'padding': '8px', 'textAlign': 'left', 'borderBottom': '2px solid #ddd'}),
+                    html.Th('Circuit', style={'padding': '8px', 'textAlign': 'left', 'borderBottom': '2px solid #ddd'}),
+                    html.Th('Classes', style={'padding': '8px', 'textAlign': 'left', 'borderBottom': '2px solid #ddd'}),
+                    html.Th('Cars', style={'padding': '8px', 'textAlign': 'center', 'borderBottom': '2px solid #ddd'}),
+                    html.Th('Duration', style={'padding': '8px', 'textAlign': 'left', 'borderBottom': '2px solid #ddd'}),
+                    html.Th('Event', style={'padding': '8px', 'textAlign': 'left', 'borderBottom': '2px solid #ddd'})
+                ])),
+                html.Tbody(rows)
+            ], style={'width': '100%', 'borderCollapse': 'collapse', 'fontSize': '12px'})
+        ], style={'padding': '10px', 'border': '1px solid #ddd', 'borderRadius': '5px', 'marginTop': '10px', 'maxHeight': '200px', 'overflowY': 'auto'})
+        
+        return xml_filenames, file_list, {'display': 'block'}, '', xml_filenames
+
+    @app.callback(
+        [Output('stored-data', 'data', allow_duplicate=True),
+         Output('stored-race-info', 'data', allow_duplicate=True),
+         Output('stored-incidents', 'data', allow_duplicate=True),
+         Output('upload-status', 'children', allow_duplicate=True),
+         Output('standings-lap-store', 'data', allow_duplicate=True)],
+        [Input({'type': 'file-button', 'index': dash.dependencies.ALL}, 'n_clicks')],
+        [State('folder-files-store', 'data'),
+         State('app-mode', 'data')],
+        prevent_initial_call=True
+    )
+    def load_selected_file(n_clicks_list, xml_filenames, app_mode):
+        if app_mode != 'desktop' or not xml_filenames:
+            raise dash.exceptions.PreventUpdate
+        
+        ctx = dash.callback_context
+        if not ctx.triggered or not ctx.triggered[0]['value']:
+            raise dash.exceptions.PreventUpdate
+        
+        # Get which button was clicked from trigger
+        trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
+        import json
+        clicked_idx = json.loads(trigger_id)['index']
+        
+        if clicked_idx is None or clicked_idx >= len(xml_filenames):
+            raise dash.exceptions.PreventUpdate
+        
+        filename = xml_filenames[clicked_idx]
+        content = server_file_cache.get(filename)
+        
+        if not content:
+            return initial_df.to_dict('records'), initial_race_info, initial_incidents, html.Div(
+                html.Div([
+                    html.Span('❌ ', style=ICON_LARGE),
+                    html.Span(f'{filename}: File not found in cache', style=ERROR_TEXT)
+                ], style={**ERROR_MESSAGE, **NOTIFICATION_BASE})
+            ), None
+        
+        try:
+            content_type, content_string = content.split(',')
+            decoded = base64.b64decode(content_string)
+            
+            is_valid, file_size_mb, error_msg = validate_file_size(decoded)
+            if not is_valid:
+                return initial_df.to_dict('records'), initial_race_info, initial_incidents, html.Div(
+                    html.Div([
+                        html.Span('❌ ', style=ICON_LARGE),
+                        html.Span(f'{filename}: {error_msg}', style=ERROR_TEXT)
+                    ], style={**ERROR_MESSAGE, **NOTIFICATION_BASE})
+                ), None
+            
+            safe_filename, content_str = validate_upload(decoded, filename)
+            df, race_info, incidents = parse_xml_scores(content_str)
+            
+            return df.to_dict('records'), race_info, incidents, html.Div(
+                html.Div([
+                    html.Span('✅ ', style=ICON_LARGE),
+                    html.Span(f'{filename} loaded successfully!', style=SUCCESS_TEXT)
+                ], style={**SUCCESS_MESSAGE, **NOTIFICATION_BASE}),
+                key=f'success-{time.time()}'
+            ), None
+        except Exception as e:
+            return initial_df.to_dict('records'), initial_race_info, initial_incidents, html.Div(
+                html.Div([
+                    html.Span('❌ ', style=ICON_LARGE),
+                    html.Span(f'Error loading {filename}: {str(e)}', style=ERROR_TEXT)
+                ], style={**ERROR_MESSAGE, **NOTIFICATION_BASE})
+            ), None
     
     @app.callback(
         Output('tabs-content', 'children'),
@@ -163,11 +444,15 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
          Output('stored-incidents', 'data'),
          Output('upload-status', 'children'),
          Output('standings-lap-store', 'data', allow_duplicate=True)],
-        Input('upload-data', 'contents'),
-        State('upload-data', 'filename'),
+        [Input('upload-data', 'contents'),
+         Input('app-mode', 'data')],
+        [State('upload-data', 'filename')],
         prevent_initial_call=True
     )
-    def update_data(contents, filename):
+    def update_data(contents, app_mode, filename):
+        if app_mode == 'desktop':
+            raise dash.exceptions.PreventUpdate
+        
         if contents is None:
             return initial_df.to_dict('records'), initial_race_info, initial_incidents, '', None
         
@@ -304,7 +589,7 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
             html.Div(first_line),
             html.Div([
                 html.Span([html.Span('🔧', className='emoji-icon'), f" Mech Fail: {mech_fail}"], style=ICON_MARGIN_20),
-                html.Span([html.Span('💥', className='emoji-icon'), f" Damage: {race_info.get('damage_mult', '0')}x"], style=ICON_MARGIN_20),
+                html.Span([html.Span('💥', className='emoji-icon'), f" Damage: {race_info.get('damage_mult', '0')}%"], style=ICON_MARGIN_20),
                 html.Span([html.Span('⛽', className='emoji-icon'), f" Fuel: {race_info.get('fuel_mult', '0')}x"], style=ICON_MARGIN_20),
                 html.Span([html.Span('🛞', className='emoji-icon'), f" Tire: {race_info.get('tire_mult', '0')}x"], style=ICON_MARGIN_20),
                 html.Span([html.Span('🔥', className='emoji-icon'), f" Warmers: {tire_warmers}"], style=ICON_MARGIN_20),
