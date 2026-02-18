@@ -84,7 +84,10 @@ dist-lnx: install
 	@echo "🏗️ Building Linux distributable..."
 	$(VENV_PIP) install pyinstaller
 	$(VENV_PYTHON) -c "import shutil, os, glob; [shutil.rmtree(d) for d in ['build', 'dist'] if os.path.exists(d)]; [os.remove(f) for f in glob.glob('*.spec')]"
-	$(VENV_PYTHON) -m PyInstaller --onefile --name rf2-lmu-charts --icon=assets/finish-flag.png --add-data "assets:assets" --add-data "samples:samples" --hidden-import=waitress app.py
+	@cp -f .env .env.bkp 2>/dev/null || true
+	@cp -f .env.desktop .env
+	$(VENV_PYTHON) -m PyInstaller --onefile --name rf2-lmu-charts --icon=assets/finish-flag.png --add-data "assets:assets" --add-data "samples:samples" --add-data ".env:." --hidden-import=waitress app.py
+	@cp -f .env.bkp .env 2>/dev/null && rm -f .env.bkp || true
 	@echo "✅ Linux build complete: dist/rf2-lmu-charts"
 
 # Dist-Windows: build distributable for Windows
@@ -92,7 +95,10 @@ dist-win: install
 	@echo "🏗️ Building Windows distributable..."
 	$(VENV_PIP) install pyinstaller
 	$(VENV_PYTHON) -c "import shutil, os, glob; [shutil.rmtree(d) for d in ['build', 'dist'] if os.path.exists(d)]; [os.remove(f) for f in glob.glob('*.spec')]"
-	$(VENV_PYTHON) -m PyInstaller --onefile --name rf2-lmu-charts-windows.exe --icon=assets/finish-flag.ico --add-data "assets;assets" --add-data "samples;samples" --hidden-import=waitress app.py
+	@cp -f .env .env.bkp 2>/dev/null || true
+	@cp -f .env.desktop .env
+	$(VENV_PYTHON) -m PyInstaller --onefile --name rf2-lmu-charts-windows.exe --icon=assets/finish-flag.ico --add-data "assets;assets" --add-data "samples;samples" --add-data ".env;." --hidden-import=waitress app.py
+	@cp -f .env.bkp .env 2>/dev/null && rm -f .env.bkp || true
 	@echo "✅ Windows build complete: dist/rf2-lmu-charts-windows.exe"
 
 # Clean: remove venv and temporary files
