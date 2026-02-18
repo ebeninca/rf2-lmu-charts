@@ -137,19 +137,21 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
             
             meta = server_metadata_cache.get(filename)
             if meta:
+                row_bg = '#ffffff' if i % 2 == 0 else '#f5f5f5'
+                td = lambda extra={}: {'padding': '8px', 'backgroundColor': row_bg, **extra}
                 rows.append(html.Tr([
                     html.Td(html.Button(
                         filename,
                         id={'type': 'file-button', 'index': i},
                         n_clicks=0,
                         style={'cursor': 'pointer', 'border': 'none', 'background': 'none', 'color': '#0066cc', 'textDecoration': 'underline', 'padding': '0'}
-                    ), style={'padding': '8px'}),
-                    html.Td(meta['event_type'], style={'padding': '8px'}),
-                    html.Td(meta['circuit'], style={'padding': '8px'}),
-                    html.Td(meta['classes'], style={'padding': '8px', 'fontSize': '11px'}),
-                    html.Td(str(meta['num_cars']), style={'padding': '8px', 'textAlign': 'center'}),
-                    html.Td(meta['duration'], style={'padding': '8px'}),
-                    html.Td(meta['event_name'], style={'padding': '8px', 'fontSize': '11px'})
+                    ), style=td()),
+                    html.Td(meta['event_type'], style=td()),
+                    html.Td(meta['circuit'], style=td()),
+                    html.Td(meta['classes'], style=td({'fontSize': '11px'})),
+                    html.Td(str(meta['num_cars']), style=td({'textAlign': 'center'})),
+                    html.Td(meta['duration'], style=td()),
+                    html.Td(meta['event_name'], style=td({'fontSize': '11px'}))
                 ]))
         
         file_list = html.Div([
@@ -165,7 +167,7 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
                     html.Th('Event', style={'padding': '8px', 'textAlign': 'left', 'borderBottom': '2px solid #ddd'})
                 ])),
                 html.Tbody(rows)
-            ], style={'width': '100%', 'borderCollapse': 'collapse', 'fontSize': '12px'})
+            ], id='file-list-table', style={'width': '100%', 'borderCollapse': 'collapse', 'fontSize': '12px'})
         ], style={'padding': '10px', 'border': '1px solid #ddd', 'borderRadius': '5px', 'marginTop': '10px', 'maxHeight': '200px', 'overflowY': 'auto'})
         
         return xml_files, file_list, {'display': 'block'}
@@ -212,19 +214,21 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
         for i, filename in enumerate(xml_filenames):
             meta = server_metadata_cache.get(filename)
             if meta:
+                row_bg = '#ffffff' if i % 2 == 0 else '#f5f5f5'
+                td = lambda extra={}: {'padding': '8px', 'backgroundColor': row_bg, **extra}
                 rows.append(html.Tr([
                     html.Td(html.Button(
                         filename,
                         id={'type': 'file-button', 'index': i},
                         n_clicks=0,
                         style={'cursor': 'pointer', 'border': 'none', 'background': 'none', 'color': '#0066cc', 'textDecoration': 'underline', 'padding': '0'}
-                    ), style={'padding': '8px'}),
-                    html.Td(meta['event_type'], style={'padding': '8px'}),
-                    html.Td(meta['circuit'], style={'padding': '8px'}),
-                    html.Td(meta['classes'], style={'padding': '8px', 'fontSize': '11px'}),
-                    html.Td(str(meta['num_cars']), style={'padding': '8px', 'textAlign': 'center'}),
-                    html.Td(meta['duration'], style={'padding': '8px'}),
-                    html.Td(meta['event_name'], style={'padding': '8px', 'fontSize': '11px'})
+                    ), style=td()),
+                    html.Td(meta['event_type'], style=td()),
+                    html.Td(meta['circuit'], style=td()),
+                    html.Td(meta['classes'], style=td({'fontSize': '11px'})),
+                    html.Td(str(meta['num_cars']), style=td({'textAlign': 'center'})),
+                    html.Td(meta['duration'], style=td()),
+                    html.Td(meta['event_name'], style=td({'fontSize': '11px'}))
                 ]))
         
         file_list = html.Div([
@@ -240,7 +244,7 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
                     html.Th('Event', style={'padding': '8px', 'textAlign': 'left', 'borderBottom': '2px solid #ddd'})
                 ])),
                 html.Tbody(rows)
-            ], style={'width': '100%', 'borderCollapse': 'collapse', 'fontSize': '12px'})
+            ], id='file-list-table', style={'width': '100%', 'borderCollapse': 'collapse', 'fontSize': '12px'})
         ], style={'padding': '10px', 'border': '1px solid #ddd', 'borderRadius': '5px', 'marginTop': '10px', 'maxHeight': '200px', 'overflowY': 'auto'})
         
         return xml_filenames, file_list, {'display': 'block'}, '', xml_filenames
@@ -688,6 +692,34 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
     def restore_events_tab(data, selected_classes, stored_tab):
         return stored_tab
 
+    app.clientside_callback(
+        """
+        function(n_clicks_list) {
+            var ctx = dash_clientside.callback_context;
+            if (!ctx.triggered || !ctx.triggered[0].value) return dash_clientside.no_update;
+            var triggerId = ctx.triggered[0].prop_id.split('.')[0];
+            var idx;
+            try { idx = JSON.parse(triggerId).index; } catch(e) { return dash_clientside.no_update; }
+            var table = document.getElementById('file-list-table');
+            if (!table) return dash_clientside.no_update;
+            var rows = table.querySelectorAll('tbody tr');
+            rows.forEach(function(row, i) {
+                var bg = i % 2 === 0 ? '#ffffff' : '#f5f5f5';
+                row.style.backgroundColor = bg;
+                row.querySelectorAll('td').forEach(function(td) { td.style.backgroundColor = bg; });
+            });
+            if (rows[idx]) {
+                rows[idx].style.backgroundColor = '#e8f4fd';
+                rows[idx].querySelectorAll('td').forEach(function(td) { td.style.backgroundColor = '#e8f4fd'; });
+            }
+            return dash_clientside.no_update;
+        }
+        """,
+        Output('folder-files-store', 'data', allow_duplicate=True),
+        Input({'type': 'file-button', 'index': dash.dependencies.ALL}, 'n_clicks'),
+        prevent_initial_call=True
+    )
+
 def _create_laptimes_table(df):
     """Cria a tabela de tempos de volta"""
     if df.empty:
@@ -728,11 +760,13 @@ def _create_laptimes_table(df):
     
     rows = []
     current_driver = None
+    lap_row_counter = 0
     
     for _, row in lap_df.iterrows():
         # Add driver header row
         if current_driver != row['Driver']:
             current_driver = row['Driver']
+            lap_row_counter = 0
             finish_pos = final_positions.get(row['Driver'], 'DNF')
             start_pos = starting_positions.get(row['Driver'], 'N/A')
             start_text = f" (Started P{int(start_pos)})" if start_pos != 'N/A' and start_pos > 0 else ""
@@ -740,6 +774,10 @@ def _create_laptimes_table(df):
                 html.Td(f"P{finish_pos} - {row['Driver']} - {row['Car']}{start_text}", colSpan=10, 
                        style={**td_style, 'backgroundColor': '#e9ecef', 'fontWeight': 'bold'})
             ]))
+        
+        row_bg = '#ffffff' if lap_row_counter % 2 == 0 else '#f5f5f5'
+        lap_row_counter += 1
+        td_row = {**td_style, 'backgroundColor': row_bg}
         
         # Format lap time
         lap_time = row['LapTime']
@@ -777,16 +815,16 @@ def _create_laptimes_table(df):
         pit_str = 'PIT' if row.get('IsPit', False) else ''
         
         rows.append(html.Tr([
-            html.Td(str(int(row['Lap'])), style=td_style),
-            html.Td(lap_time_str, style=td_style),
-            html.Td(s1_str, style=td_style),
-            html.Td(s2_str, style=td_style),
-            html.Td(s3_str, style=td_style),
-            html.Td(ve_str, style=td_style),
-            html.Td(fuel_str, style=td_style),
-            html.Td(tire_wear_str, style=td_style),
-            html.Td(compounds_str, style=td_style),
-            html.Td(pit_str, style={**td_style, 'fontWeight': 'bold', 'color': 'red'})
+            html.Td(str(int(row['Lap'])), style=td_row),
+            html.Td(lap_time_str, style=td_row),
+            html.Td(s1_str, style=td_row),
+            html.Td(s2_str, style=td_row),
+            html.Td(s3_str, style=td_row),
+            html.Td(ve_str, style=td_row),
+            html.Td(fuel_str, style=td_row),
+            html.Td(tire_wear_str, style=td_row),
+            html.Td(compounds_str, style=td_row),
+            html.Td(pit_str, style={**td_row, 'fontWeight': 'bold', 'color': 'red'})
         ]))
     
     table_content = [

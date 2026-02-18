@@ -74,27 +74,29 @@ def create_standings_table(selected_lap, data):
     class_color_map = {cls: color_palette[i % len(color_palette)] for i, cls in enumerate(unique_classes)}
     
     rows = []
-    for _, row in lap_df.iterrows():
+    for i, (_, row) in enumerate(lap_df.iterrows()):
         up_color = 'green' if row['Up'] > 0 else ('red' if row['Up'] < 0 else 'gray')
         up_text = f"+{row['Up']}" if row['Up'] > 0 else str(row['Up'])
         best_lap_text = f"{int(row['BestLap']//60):01d}:{int(row['BestLap']%60):02d}.{int((row['BestLap']%1)*1000):03d}" if pd.notna(row['BestLap']) else '-'
         class_abbr = row['Class'][:3].upper()
         pos_bg_color = class_color_map.get(row['Class'], '#CCCCCC')
+        row_bg = '#ffffff' if i % 2 == 0 else '#f5f5f5'
+        td_row = {**td_style_table, 'backgroundColor': row_bg}
         
         rows.append(html.Tr([
-            html.Td(str(int(row['OriginalPosition'])), style={**td_style_table, 'fontWeight': 'bold'}),
-            html.Td(up_text, style={**td_style_table, 'color': up_color, 'fontWeight': 'bold'}),
-            html.Td(class_abbr, style={**td_style_table, 'backgroundColor': pos_bg_color, 'fontWeight': 'bold', 'color': 'black', 'textAlign': 'center'}),
-            html.Td(row['Driver'], style=td_style_table),
-            html.Td(row['Car'], style=td_style_table),
-            html.Td(row.get('VehName', '-'), style=td_style_table),
-            html.Td(str(int(row['Lap'])), style=td_style_table),
-            html.Td(row['Gap'], style=td_style_table),
-            html.Td(best_lap_text, style=td_style_table),
-            html.Td(str(row['Led']), style=td_style_table),
-            html.Td(str(row['Pits']), style=td_style_table),
-            html.Td(f"{row.get('FCompound', '').split(',')[-1] if row.get('FCompound') else '-'}/{row.get('RCompound', '').split(',')[-1] if row.get('RCompound') else '-'}", style=td_style_table),
-            html.Td(row.get('Aids', '-'), style=td_style_table)
+            html.Td(str(int(row['OriginalPosition'])), style={**td_row, 'fontWeight': 'bold'}),
+            html.Td(up_text, style={**td_row, 'color': up_color, 'fontWeight': 'bold'}),
+            html.Td(class_abbr, style={**td_row, 'backgroundColor': pos_bg_color, 'fontWeight': 'bold', 'color': 'black', 'textAlign': 'center'}),
+            html.Td(row['Driver'], style=td_row),
+            html.Td(row['Car'], style=td_row),
+            html.Td(row.get('VehName', '-'), style=td_row),
+            html.Td(str(int(row['Lap'])), style=td_row),
+            html.Td(row['Gap'], style=td_row),
+            html.Td(best_lap_text, style=td_row),
+            html.Td(str(row['Led']), style=td_row),
+            html.Td(str(row['Pits']), style=td_row),
+            html.Td(f"{row.get('FCompound', '').split(',')[-1] if row.get('FCompound') else '-'}/{row.get('RCompound', '').split(',')[-1] if row.get('RCompound') else '-'}", style=td_row),
+            html.Td(row.get('Aids', '-'), style=td_row)
         ]))
     
     return html.Table([

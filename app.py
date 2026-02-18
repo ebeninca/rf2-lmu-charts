@@ -3,7 +3,7 @@ import pandas as pd
 import os
 import sys
 from dotenv import load_dotenv
-#from flask_limiter import Limiter
+from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from data.parsers_secure import parse_xml_scores
 from presentation.layouts import create_main_layout
@@ -20,16 +20,16 @@ else:
 app = dash.Dash(__name__)
 app.config.suppress_callback_exceptions = True
 
-load_dotenv()
+load_dotenv(os.path.join(base_path, '.env.desktop' if getattr(sys, 'frozen', False) else '.env'))
 
 # Initialize rate limiter
-#limiter = Limiter(
-#    app=app.server,
-#    key_func=get_remote_address,
-#    default_limits=["86400 per day", "3600 per hour"],
-#    storage_uri="memory://",
-#    strategy="fixed-window"
-#)
+limiter = Limiter(
+    app=app.server,
+    key_func=get_remote_address,
+    default_limits=["86400 per day", "3600 per hour"],
+    storage_uri="memory://",
+    strategy="fixed-window"
+)
 
 # Add security headers
 @app.server.after_request
