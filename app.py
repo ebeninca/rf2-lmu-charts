@@ -36,6 +36,17 @@ limiter = Limiter(
 def apply_security_headers(response):
     return add_security_headers(response)
 
+# Clear cache endpoint (desktop only)
+from presentation.callbacks import server_file_cache, server_metadata_cache, CACHE_FILE
+from flask import redirect
+@app.server.route('/clear-cache')
+def clear_cache_route():
+    server_file_cache.clear()
+    server_metadata_cache.clear()
+    if os.path.exists(CACHE_FILE):
+        os.remove(CACHE_FILE)
+    return redirect('/')
+
 # Load custom HTML template
 with open(os.path.join(base_path, 'assets/index.html'), 'r', encoding='utf-8') as f:
     app.index_string = f.read()

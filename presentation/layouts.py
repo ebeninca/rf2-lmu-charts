@@ -58,11 +58,8 @@ def create_main_layout(initial_df, initial_race_info, initial_incidents):
             dcc.Store(id='folder-files-store'),
             dcc.Store(id='last-folder-store', storage_type='local'),
             
-            dcc.Loading(
-                id='loading',
-                type='circle',
-                children=[html.Div(id='upload-status')]
-            ),
+            html.Div(id='upload-status'),
+            
             
             create_filters_section(),
             
