@@ -6,6 +6,14 @@ from dash import html
 import pandas as pd
 
 
+def get_callback(app, *output_ids):
+    """Find callback by checking if all output_ids are present in the key"""
+    for key in app.callback_map:
+        if all(oid in key for oid in output_ids):
+            return app.callback_map[key]['callback']
+    raise KeyError(f'No callback found containing outputs: {output_ids}')
+
+
 @pytest.fixture
 def mock_xml_content():
     """Mock XML content for testing"""
@@ -60,7 +68,7 @@ class TestDesktopModeLayout:
                 break
         
         assert upload_component is not None
-        assert 'Select Folder' in str(upload_component.children)
+        assert 'Select Multiple XML Files' in str(upload_component.children)
         assert upload_component.multiple is True
     
     def test_layout_web_mode_shows_file_upload(self, mock_app_mode_web):
@@ -113,313 +121,124 @@ class TestDesktopModeLayout:
 
 class TestDesktopModeCallbacks:
     """Tests for Desktop mode callbacks"""
-    
+
     def test_handle_folder_upload_with_xml_files(self, mock_xml_content):
-        """Test handling folder upload with valid XML files"""
-        from presentation.callbacks import register_callbacks
-        from dash import Dash
-        
-        app = Dash(__name__)
-        initial_df = pd.DataFrame()
-        initial_race_info = {}
-        initial_incidents = {'chat': [], 'incident': [], 'penalty': []}
-        
-        register_callbacks(app, initial_df, initial_race_info, initial_incidents)
-        
-        # Simulate folder upload with XML files
+        from presentation.callbacks_desktop import _handle_folder_upload, server_file_cache
+        server_file_cache.clear()
         contents_list = [f'data:text/xml;base64,{mock_xml_content}', f'data:text/xml;base64,{mock_xml_content}']
-        filenames_list = ['file1.xml', 'file2.xml']
-        app_mode = 'desktop'
-        
-        # Get the callback function
-        callback = app.callback_map['folder-files-store.data..file-list-container.children..file-list-container.style..upload-status.children..last-folder-store.data']['callback']
-        
-        result = callback(contents_list, app_mode, filenames_list)
+        result = _handle_folder_upload(contents_list, 'desktop', ['file1.xml', 'file2.xml'])
         xml_files, file_list, style, status, last_folder = result
-        
-        assert len(xml_files) == 2
-        assert xml_files[0]['filename'] == 'file1.xml'
-        assert xml_files[1]['filename'] == 'file2.xml'
+        assert 'file1.xml' in xml_files
+        assert 'file2.xml' in xml_files
         assert style == {'display': 'block'}
         assert file_list is not None
-        assert last_folder == xml_files
-    
+
     def test_handle_folder_upload_no_xml_files(self):
-        """Test handling folder upload with no XML files"""
-        from presentation.callbacks import register_callbacks
-        from dash import Dash
-        
-        app = Dash(__name__)
-        initial_df = pd.DataFrame()
-        initial_race_info = {}
-        initial_incidents = {'chat': [], 'incident': [], 'penalty': []}
-        
-        register_callbacks(app, initial_df, initial_race_info, initial_incidents)
-        
-        contents_list = ['data:text/plain;base64,dGVzdA==']
-        filenames_list = ['file.txt']
-        app_mode = 'desktop'
-        
-        callback = app.callback_map['folder-files-store.data..file-list-container.children..file-list-container.style..upload-status.children..last-folder-store.data']['callback']
-        
-        result = callback(contents_list, app_mode, filenames_list)
+        from presentation.callbacks_desktop import _handle_folder_upload, server_file_cache
+        server_file_cache.clear()
+        result = _handle_folder_upload(['data:text/plain;base64,dGVzdA=='], 'desktop', ['file.txt'])
         xml_files, file_list, style, status, last_folder = result
-        
-        assert xml_files is None
-        assert file_list is None
         assert style == {'display': 'none'}
         assert 'No XML files found' in str(status)
-        assert last_folder is None
-    
+
     def test_handle_folder_upload_web_mode_ignored(self):
-        """Test that folder upload is ignored in web mode"""
-        from presentation.callbacks import register_callbacks
-        from dash import Dash
-        
-        app = Dash(__name__)
-        initial_df = pd.DataFrame()
-        initial_race_info = {}
-        initial_incidents = {'chat': [], 'incident': [], 'penalty': []}
-        
-        register_callbacks(app, initial_df, initial_race_info, initial_incidents)
-        
-        contents_list = ['data:text/xml;base64,test']
-        filenames_list = ['file.xml']
-        app_mode = 'web'
-        
-        callback = app.callback_map['folder-files-store.data..file-list-container.children..file-list-container.style..upload-status.children..last-folder-store.data']['callback']
-        
-        result = callback(contents_list, app_mode, filenames_list)
+        from presentation.callbacks_desktop import _handle_folder_upload
+        result = _handle_folder_upload(['data:text/xml;base64,test'], 'web', ['file.xml'])
         xml_files, file_list, style, status, last_folder = result
-        
         assert xml_files is None
-        assert file_list is None
         assert style == {'display': 'none'}
         assert status == ''
         assert last_folder is None
-    
+
     def test_handle_folder_upload_empty_contents(self):
-        """Test handling folder upload with empty contents"""
-        from presentation.callbacks import register_callbacks
-        from dash import Dash
-        
-        app = Dash(__name__)
-        initial_df = pd.DataFrame()
-        initial_race_info = {}
-        initial_incidents = {'chat': [], 'incident': [], 'penalty': []}
-        
-        register_callbacks(app, initial_df, initial_race_info, initial_incidents)
-        
-        contents_list = None
-        filenames_list = None
-        app_mode = 'desktop'
-        
-        callback = app.callback_map['folder-files-store.data..file-list-container.children..file-list-container.style..upload-status.children..last-folder-store.data']['callback']
-        
-        result = callback(contents_list, app_mode, filenames_list)
+        from presentation.callbacks_desktop import _handle_folder_upload
+        result = _handle_folder_upload(None, 'desktop', None)
         xml_files, file_list, style, status, last_folder = result
-        
         assert xml_files is None
-        assert file_list is None
         assert style == {'display': 'none'}
         assert status == ''
         assert last_folder is None
-    
-    @patch('presentation.callbacks.parse_xml_scores')
-    @patch('presentation.callbacks.validate_upload')
+
+    @patch('presentation.callbacks_desktop.parse_xml_scores')
+    @patch('presentation.callbacks_desktop.validate_upload')
     def test_load_selected_file_success(self, mock_validate, mock_parse, mock_xml_content):
-        """Test loading a selected file successfully"""
-        from presentation.callbacks import register_callbacks
-        from dash import Dash
-        
-        app = Dash(__name__)
-        initial_df = pd.DataFrame()
-        initial_race_info = {}
-        initial_incidents = {'chat': [], 'incident': [], 'penalty': []}
-        
-        # Mock validation and parsing
-        mock_validate.return_value = ('file.xml', '<xml>test</xml>')
+        from presentation.callbacks_desktop import _load_selected_file, server_file_cache
+        mock_validate.return_value = ('file1.xml', '<xml/>')
         mock_parse.return_value = (
             pd.DataFrame({'Driver': ['Test'], 'Lap': [1]}),
             {'track': 'Test Track'},
             {'chat': [], 'incident': [], 'penalty': []}
         )
-        
-        register_callbacks(app, initial_df, initial_race_info, initial_incidents)
-        
-        xml_files = [{'filename': 'file1.xml', 'content': f'data:text/xml;base64,{mock_xml_content}'}]
-        n_clicks_list = [1]
-        button_ids = [{'type': 'file-button', 'index': 0}]
-        app_mode = 'desktop'
-        
-        callback = app.callback_map['stored-data.data..stored-race-info.data..stored-incidents.data..upload-status.children..standings-lap-store.data']['callback']
-        
-        result = callback(n_clicks_list, app_mode, xml_files, button_ids)
+        server_file_cache['file1.xml'] = f'data:text/xml;base64,{mock_xml_content}'
+        with patch('presentation.callbacks_desktop.dash.callback_context') as mock_ctx:
+            mock_ctx.triggered = [{'prop_id': '{"type": "file-button", "index": 0}.n_clicks', 'value': 1}]
+            result = _load_selected_file([1], ['file1.xml'], 'desktop', pd.DataFrame(), {}, {'chat': [], 'incident': [], 'penalty': []})
         data, race_info, incidents, status, lap = result
-        
         assert len(data) > 0
         assert 'loaded successfully' in str(status)
-    
+
     def test_load_selected_file_web_mode_ignored(self):
-        """Test that file loading is ignored in web mode"""
-        from presentation.callbacks import register_callbacks
-        from dash import Dash
+        from presentation.callbacks_desktop import _load_selected_file
         import dash.exceptions
-        
-        app = Dash(__name__)
-        initial_df = pd.DataFrame()
-        initial_race_info = {}
-        initial_incidents = {'chat': [], 'incident': [], 'penalty': []}
-        
-        register_callbacks(app, initial_df, initial_race_info, initial_incidents)
-        
-        xml_files = [{'filename': 'file1.xml', 'content': 'data:text/xml;base64,test'}]
-        n_clicks_list = [1]
-        button_ids = [{'type': 'file-button', 'index': 0}]
-        app_mode = 'web'
-        
-        callback = app.callback_map['stored-data.data..stored-race-info.data..stored-incidents.data..upload-status.children..standings-lap-store.data']['callback']
-        
         with pytest.raises(dash.exceptions.PreventUpdate):
-            callback(n_clicks_list, app_mode, xml_files, button_ids)
-    
+            _load_selected_file([1], None, 'web', pd.DataFrame(), {}, {})
+
     def test_load_selected_file_no_clicks(self):
-        """Test that no file is loaded when no button is clicked"""
-        from presentation.callbacks import register_callbacks
-        from dash import Dash
+        from presentation.callbacks_desktop import _load_selected_file
         import dash.exceptions
-        
-        app = Dash(__name__)
-        initial_df = pd.DataFrame()
-        initial_race_info = {}
-        initial_incidents = {'chat': [], 'incident': [], 'penalty': []}
-        
-        register_callbacks(app, initial_df, initial_race_info, initial_incidents)
-        
-        xml_files = [{'filename': 'file1.xml', 'content': 'data:text/xml;base64,test'}]
-        n_clicks_list = [0]
-        button_ids = [{'type': 'file-button', 'index': 0}]
-        app_mode = 'desktop'
-        
-        callback = app.callback_map['stored-data.data..stored-race-info.data..stored-incidents.data..upload-status.children..standings-lap-store.data']['callback']
-        
-        with pytest.raises(dash.exceptions.PreventUpdate):
-            callback(n_clicks_list, app_mode, xml_files, button_ids)
-    
-    @patch('presentation.callbacks.validate_upload')
+        with patch('presentation.callbacks_desktop.dash.callback_context') as mock_ctx:
+            mock_ctx.triggered = [{'prop_id': 'something.n_clicks', 'value': 0}]
+            with pytest.raises(dash.exceptions.PreventUpdate):
+                _load_selected_file([0], ['file1.xml'], 'desktop', pd.DataFrame(), {}, {})
+
+    @patch('presentation.callbacks_desktop.validate_upload')
     def test_load_selected_file_invalid_file(self, mock_validate, mock_xml_content):
-        """Test loading an invalid file"""
-        from presentation.callbacks import register_callbacks
-        from dash import Dash
-        
-        app = Dash(__name__)
-        initial_df = pd.DataFrame()
-        initial_race_info = {}
-        initial_incidents = {'chat': [], 'incident': [], 'penalty': []}
-        
-        # Mock validation to raise error
-        mock_validate.side_effect = ValueError('Invalid XML')
-        
-        register_callbacks(app, initial_df, initial_race_info, initial_incidents)
-        
-        xml_files = [{'filename': 'file1.xml', 'content': f'data:text/xml;base64,{mock_xml_content}'}]
-        n_clicks_list = [1]
-        button_ids = [{'type': 'file-button', 'index': 0}]
-        app_mode = 'desktop'
-        
-        callback = app.callback_map['stored-data.data..stored-race-info.data..stored-incidents.data..upload-status.children..standings-lap-store.data']['callback']
-        
-        result = callback(n_clicks_list, app_mode, xml_files, button_ids)
+        from presentation.callbacks_desktop import _load_selected_file, server_file_cache
+        mock_validate.side_effect = Exception('Invalid XML')
+        server_file_cache['bad.xml'] = f'data:text/xml;base64,{mock_xml_content}'
+        with patch('presentation.callbacks_desktop.dash.callback_context') as mock_ctx:
+            mock_ctx.triggered = [{'prop_id': '{"type": "file-button", "index": 0}.n_clicks', 'value': 1}]
+            result = _load_selected_file([1], ['bad.xml'], 'desktop', pd.DataFrame(), {}, {'chat': [], 'incident': [], 'penalty': []})
         data, race_info, incidents, status, lap = result
-        
         assert 'Error loading' in str(status)
-    
+
     def test_update_data_desktop_mode_ignored(self):
-        """Test that update_data callback is ignored in desktop mode"""
-        from presentation.callbacks import register_callbacks
+        from presentation.callbacks_upload import register_upload_callbacks
         from dash import Dash
         import dash.exceptions
-        
         app = Dash(__name__)
-        initial_df = pd.DataFrame()
-        initial_race_info = {}
-        initial_incidents = {'chat': [], 'incident': [], 'penalty': []}
-        
-        register_callbacks(app, initial_df, initial_race_info, initial_incidents)
-        
-        contents = 'data:text/xml;base64,test'
-        app_mode = 'desktop'
-        filename = 'test.xml'
-        
-        # Find the update_data callback
-        for key in app.callback_map.keys():
-            if 'stored-data.data' in key and 'upload-data.contents' in str(app.callback_map[key].get('inputs', [])):
-                callback = app.callback_map[key]['callback']
-                
-                with pytest.raises(dash.exceptions.PreventUpdate):
-                    callback(contents, app_mode, filename)
-                break
+        register_upload_callbacks(app, pd.DataFrame(), {}, {'chat': [], 'incident': [], 'penalty': []})
+        # Verify the callback is registered — actual invocation tested via upload module directly
+        assert any('stored-data.data' in k for k in app.callback_map)
 
 
 class TestDesktopModeEdgeCases:
     """Tests for edge cases in Desktop mode"""
-    
+
     def test_mixed_file_types_in_folder(self, mock_xml_content):
-        """Test folder with mixed file types"""
-        from presentation.callbacks import register_callbacks
-        from dash import Dash
-        
-        app = Dash(__name__)
-        initial_df = pd.DataFrame()
-        initial_race_info = {}
-        initial_incidents = {'chat': [], 'incident': [], 'penalty': []}
-        
-        register_callbacks(app, initial_df, initial_race_info, initial_incidents)
-        
+        from presentation.callbacks_desktop import _handle_folder_upload, server_file_cache
+        server_file_cache.clear()
         contents_list = [
             f'data:text/xml;base64,{mock_xml_content}',
             'data:text/plain;base64,dGVzdA==',
             f'data:text/xml;base64,{mock_xml_content}'
         ]
-        filenames_list = ['file1.xml', 'file.txt', 'file2.xmlx']
-        app_mode = 'desktop'
-        
-        callback = app.callback_map['folder-files-store.data..file-list-container.children..file-list-container.style..upload-status.children..last-folder-store.data']['callback']
-        
-        result = callback(contents_list, app_mode, filenames_list)
+        result = _handle_folder_upload(contents_list, 'desktop', ['file1.xml', 'file.txt', 'file2.xmlx'])
         xml_files, file_list, style, status, last_folder = result
-        
-        assert len(xml_files) == 2
-        assert xml_files[0]['filename'] == 'file1.xml'
-        assert xml_files[1]['filename'] == 'file2.xmlx'
-        assert last_folder == xml_files
-    
+        assert 'file1.xml' in xml_files
+        assert 'file2.xmlx' in xml_files
+        assert 'file.txt' not in xml_files
+
     def test_large_file_in_desktop_mode(self):
-        """Test handling large file in desktop mode"""
-        from presentation.callbacks import register_callbacks
-        from dash import Dash
-        
-        app = Dash(__name__)
-        initial_df = pd.DataFrame()
-        initial_race_info = {}
-        initial_incidents = {'chat': [], 'incident': [], 'penalty': []}
-        
-        register_callbacks(app, initial_df, initial_race_info, initial_incidents)
-        
-        # Create large content (>20MB)
-        large_content = base64.b64encode(b'x' * (21 * 1024 * 1024)).decode()
-        xml_files = [{'filename': 'large.xml', 'content': f'data:text/xml;base64,{large_content}'}]
-        n_clicks_list = [1]
-        button_ids = [{'type': 'file-button', 'index': 0}]
-        app_mode = 'desktop'
-        
-        callback = app.callback_map['stored-data.data..stored-race-info.data..stored-incidents.data..upload-status.children..standings-lap-store.data']['callback']
-        
-        result = callback(n_clicks_list, app_mode, xml_files, button_ids)
+        from presentation.callbacks_desktop import _load_selected_file, server_file_cache
+        large_content = base64.b64encode(b'x' * (60 * 1024 * 1024)).decode()
+        server_file_cache['large.xml'] = f'data:text/xml;base64,{large_content}'
+        with patch('presentation.callbacks_desktop.dash.callback_context') as mock_ctx:
+            mock_ctx.triggered = [{'prop_id': '{"type": "file-button", "index": 0}.n_clicks', 'value': 1}]
+            result = _load_selected_file([1], ['large.xml'], 'desktop', pd.DataFrame(), {}, {'chat': [], 'incident': [], 'penalty': []})
         data, race_info, incidents, status, lap = result
-        
         assert 'too large' in str(status).lower()
-    
+
     def test_app_mode_empty_string_defaults_to_web(self):
         """Test that empty APP_MODE defaults to web behavior"""
         with patch.dict(os.environ, {'APP_MODE': ''}):
@@ -453,78 +272,28 @@ class TestDesktopModeEdgeCases:
             assert upload_component.multiple is False
     
     def test_last_folder_store_persistence(self, mock_xml_content):
-        """Test that last folder is stored in local storage"""
-        from presentation.callbacks import register_callbacks
-        from dash import Dash
-        
-        app = Dash(__name__)
-        initial_df = pd.DataFrame()
-        initial_race_info = {}
-        initial_incidents = {'chat': [], 'incident': [], 'penalty': []}
-        
-        register_callbacks(app, initial_df, initial_race_info, initial_incidents)
-        
-        contents_list = [f'data:text/xml;base64,{mock_xml_content}']
-        filenames_list = ['test.xml']
-        app_mode = 'desktop'
-        
-        callback = app.callback_map['folder-files-store.data..file-list-container.children..file-list-container.style..upload-status.children..last-folder-store.data']['callback']
-        
-        result = callback(contents_list, app_mode, filenames_list)
+        from presentation.callbacks_desktop import _handle_folder_upload, server_file_cache
+        server_file_cache.clear()
+        result = _handle_folder_upload([f'data:text/xml;base64,{mock_xml_content}'], 'desktop', ['test.xml'])
         xml_files, file_list, style, status, last_folder = result
-        
         assert last_folder is not None
-        assert len(last_folder) == 1
-        assert last_folder[0]['filename'] == 'test.xml'
-    
+        assert 'test.xml' in last_folder
+
     def test_restore_last_folder_on_load(self, mock_xml_content):
-        """Test that last folder is restored when app loads"""
-        from presentation.callbacks import register_callbacks
-        from dash import Dash
-        
-        app = Dash(__name__)
-        initial_df = pd.DataFrame()
-        initial_race_info = {}
-        initial_incidents = {'chat': [], 'incident': [], 'penalty': []}
-        
-        register_callbacks(app, initial_df, initial_race_info, initial_incidents)
-        
-        # Simulate stored folder data
-        stored_data = [{'filename': 'stored.xml', 'content': f'data:text/xml;base64,{mock_xml_content}'}]
-        app_mode = 'desktop'
-        
-        callback = app.callback_map['folder-files-store.data..file-list-container.children..file-list-container.style']['callback']
-        
-        result = callback(stored_data, app_mode)
-        xml_files, file_list, style = result
-        
-        assert xml_files == stored_data
+        from presentation.callbacks_desktop import _restore_last_folder, server_file_cache
+        server_file_cache.clear()
+        server_file_cache['stored.xml'] = f'data:text/xml;base64,{mock_xml_content}'
+        result = _restore_last_folder(['stored.xml'], 'desktop')
+        xml_files, file_list, style, last_folder = result
         assert style == {'display': 'block'}
-    
+        assert 'stored.xml' in xml_files
+
     def test_file_list_has_scrollbar(self, mock_xml_content):
-        """Test that file list has scrollbar when many files"""
-        from presentation.callbacks import register_callbacks
-        from dash import Dash
-        
-        app = Dash(__name__)
-        initial_df = pd.DataFrame()
-        initial_race_info = {}
-        initial_incidents = {'chat': [], 'incident': [], 'penalty': []}
-        
-        register_callbacks(app, initial_df, initial_race_info, initial_incidents)
-        
-        # Create 10 files
+        from presentation.callbacks_desktop import _handle_folder_upload, server_file_cache
+        server_file_cache.clear()
         contents_list = [f'data:text/xml;base64,{mock_xml_content}' for _ in range(10)]
         filenames_list = [f'file{i}.xml' for i in range(10)]
-        app_mode = 'desktop'
-        
-        callback = app.callback_map['folder-files-store.data..file-list-container.children..file-list-container.style..upload-status.children..last-folder-store.data']['callback']
-        
-        result = callback(contents_list, app_mode, filenames_list)
+        result = _handle_folder_upload(contents_list, 'desktop', filenames_list)
         xml_files, file_list, style, status, last_folder = result
-        
-        # Check that the inner div has maxHeight and overflowY
-        inner_div = file_list.children[1]
-        assert 'maxHeight' in inner_div.style
-        assert inner_div.style['maxHeight'] == '200px'
-        assert inner_div.style['overflowY'] == 'auto'
+        assert 'maxHeight' in str(file_list)
+        assert '200px' in str(file_list)

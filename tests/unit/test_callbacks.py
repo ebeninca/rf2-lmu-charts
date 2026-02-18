@@ -3,10 +3,9 @@ import pandas as pd
 from unittest.mock import Mock, patch, MagicMock
 import base64
 from dash import Dash, html
-from presentation.callbacks import (
-    validate_file_size, register_callbacks, 
-    _create_laptimes_table, _render_standings_tab
-)
+from presentation.callbacks import register_callbacks
+from presentation.callbacks_cache import validate_file_size
+from presentation.callbacks_tabs import _create_laptimes_table, _render_standings_tab
 
 
 # ============================================================================
@@ -106,8 +105,8 @@ class TestUpdateData:
         register_callbacks(app, sample_dataframe, sample_race_info, sample_incidents)
         assert len(app.callback_map) > 0
     
-    @patch('presentation.callbacks.parse_xml_scores')
-    @patch('presentation.callbacks.validate_upload')
+    @patch('presentation.callbacks_upload.parse_xml_scores')
+    @patch('presentation.callbacks_upload.validate_upload')
     def test_update_data_valid_xml_parsing(self, mock_validate, mock_parse, 
                                            sample_dataframe, sample_xml):
         """Upload de XML válido processa corretamente"""
@@ -398,7 +397,7 @@ class TestCallbackFunctionsDirectly:
     
     def test_render_tab_content_standings_direct(self, sample_dataframe, sample_race_info, sample_incidents):
         """Testa renderização direta da aba standings"""
-        from presentation.callbacks import _render_standings_tab
+        from presentation.callbacks_tabs import _render_standings_tab
         data = sample_dataframe.to_dict('records')
         result = _render_standings_tab(data, 1)
         assert result is not None
@@ -406,7 +405,7 @@ class TestCallbackFunctionsDirectly:
     
     def test_create_laptimes_table_with_large_dataset(self):
         """Testa tabela de laptimes com dataset grande (>2000 linhas)"""
-        # Cria dataset grande
+        from presentation.callbacks_tabs import _create_laptimes_table
         large_df = pd.DataFrame({
             'Driver': ['Driver1'] * 2500,
             'Lap': list(range(1, 2501)),

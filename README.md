@@ -95,5 +95,4 @@ python test_security.py
 
 # PENDENCIAS MOMENTANEAS DA BRANCH DESKTOP-DIST
 
-- passar nos testes
 - make / github .env
