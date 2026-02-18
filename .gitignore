@@ -29,6 +29,11 @@ dist/
 *.spec
 
 # Security
-.env
 logs/
 *.log
+
+# env
+.env
+
+# cache
+.desktop_file_cache.pkl
