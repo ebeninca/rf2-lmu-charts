@@ -80,7 +80,7 @@ def create_standings_table(selected_lap, data):
         best_lap_text = f"{int(row['BestLap']//60):01d}:{int(row['BestLap']%60):02d}.{int((row['BestLap']%1)*1000):03d}" if pd.notna(row['BestLap']) else '-'
         class_abbr = row['Class'][:3].upper()
         pos_bg_color = class_color_map.get(row['Class'], '#CCCCCC')
-        row_bg = '#ffffff' if i % 2 == 0 else '#f5f5f5'
+        row_bg = '#ffffff' if i % 2 == 0 else '#e0e0e0'
         td_row = {**td_style_table, 'backgroundColor': row_bg}
         
         rows.append(html.Tr([

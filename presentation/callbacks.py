@@ -137,7 +137,7 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
             
             meta = server_metadata_cache.get(filename)
             if meta:
-                row_bg = '#ffffff' if i % 2 == 0 else '#f5f5f5'
+                row_bg = '#ffffff' if i % 2 == 0 else '#e0e0e0'
                 td = lambda extra={}: {'padding': '8px', 'backgroundColor': row_bg, **extra}
                 rows.append(html.Tr([
                     html.Td(html.Button(
@@ -214,7 +214,7 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
         for i, filename in enumerate(xml_filenames):
             meta = server_metadata_cache.get(filename)
             if meta:
-                row_bg = '#ffffff' if i % 2 == 0 else '#f5f5f5'
+                row_bg = '#ffffff' if i % 2 == 0 else '#e0e0e0'
                 td = lambda extra={}: {'padding': '8px', 'backgroundColor': row_bg, **extra}
                 rows.append(html.Tr([
                     html.Td(html.Button(
@@ -704,7 +704,7 @@ def register_callbacks(app, initial_df, initial_race_info, initial_incidents):
             if (!table) return dash_clientside.no_update;
             var rows = table.querySelectorAll('tbody tr');
             rows.forEach(function(row, i) {
-                var bg = i % 2 === 0 ? '#ffffff' : '#f5f5f5';
+                var bg = i % 2 === 0 ? '#ffffff' : '#e0e0e0';
                 row.style.backgroundColor = bg;
                 row.querySelectorAll('td').forEach(function(td) { td.style.backgroundColor = bg; });
             });
@@ -775,7 +775,7 @@ def _create_laptimes_table(df):
                        style={**td_style, 'backgroundColor': '#e9ecef', 'fontWeight': 'bold'})
             ]))
         
-        row_bg = '#ffffff' if lap_row_counter % 2 == 0 else '#f5f5f5'
+        row_bg = '#ffffff' if lap_row_counter % 2 == 0 else '#e0e0e0'
         lap_row_counter += 1
         td_row = {**td_style, 'backgroundColor': row_bg}
         

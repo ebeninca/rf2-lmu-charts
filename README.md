@@ -92,3 +92,22 @@ Test security implementation:
 ```bash
 python test_security.py
 ```
+
+# PENDENCIAS MOMENTANEAS DA BRANCH DESKTOP-DIST
+
+- passar nos testes
+
+- make / github .env
+- botao para limpar cache
+- selecionar novos arquivos adiciona/substitui os ja existentes no cache
+
+- Inverta a ordem dos componentes na tela, carga de xml acima da seçao de detalhes do arquivo selecionado.
+- O cinza de fundo precisa ser um pouco mais escuro para funcionar legal no modo dark
+
+
+
+Ainda no modo desktop..
+
+Adicione na parte superior direita da seção de lista de arquivos um botao de clear cache, para limpar o arquivo pkl...
+
+Por consequencia, toda vez que o user selecionar novos arquivos, ao inves de limpar o cache, adicione ou sobrescreva no cache existente...

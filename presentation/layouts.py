@@ -19,8 +19,6 @@ def create_main_layout(initial_df, initial_race_info, initial_incidents):
                 html.Span('🏁', className='emoji-icon', style=ICON_LARGE)
             ], style={'textAlign': 'center'}),
             
-            html.Div(id='race-info', style={'textAlign': 'center', 'padding': '10px', 'backgroundColor': '#f0f0f0', 'margin': '10px 0', 'borderRadius': '5px'}),
-            
             dcc.Upload(
                 id='upload-data',
                 children=html.Div([
@@ -38,6 +36,9 @@ def create_main_layout(initial_df, initial_race_info, initial_incidents):
                 multiple=True if app_mode == 'desktop' else False
             ),
             
+            html.P([html.Span('📁', className='emoji-icon'), ' Maximum file size: 20MB • ', html.Span('🔒', className='emoji-icon'), ' Your data is not stored or persisted on the server - processed in memory only'], 
+                   style={'textAlign': 'center', 'fontSize': '12px', 'color': '#666', 'margin': '0'}) if app_mode == 'web' else html.Div(),
+            
             html.P([
                 html.Span('💡 ', className='emoji-icon'),
                 html.Strong('Desktop Mode: '),
@@ -51,11 +52,11 @@ def create_main_layout(initial_df, initial_race_info, initial_incidents):
             }) if app_mode == 'desktop' else html.Div(),
             
             html.Div(id='file-list-container', style={'display': 'none'}),
+            
+            html.Div(id='race-info', style={'textAlign': 'center', 'padding': '10px', 'backgroundColor': '#f0f0f0', 'margin': '10px 0', 'borderRadius': '5px'}),
+            
             dcc.Store(id='folder-files-store'),
             dcc.Store(id='last-folder-store', storage_type='local'),
-            
-            html.P([html.Span('📁', className='emoji-icon'), ' Maximum file size: 20MB • ', html.Span('🔒', className='emoji-icon'), ' Your data is not stored or persisted on the server - processed in memory only'], 
-                   style={'textAlign': 'center', 'fontSize': '12px', 'color': '#666', 'margin': '0'}),
             
             dcc.Loading(
                 id='loading',
