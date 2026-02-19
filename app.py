@@ -8,6 +8,7 @@ from flask_limiter.util import get_remote_address
 from data.parsers_secure import parse_xml_scores
 from presentation.layouts import create_main_layout
 from presentation.callbacks import register_callbacks
+from presentation.callbacks_desktop import register_routes
 from security.security import add_security_headers
 
 # Get base path for PyInstaller
@@ -36,16 +37,8 @@ limiter = Limiter(
 def apply_security_headers(response):
     return add_security_headers(response)
 
-# Clear cache endpoint (desktop only)
-from presentation.callbacks import server_file_cache, server_metadata_cache, CACHE_FILE
-from flask import redirect
-@app.server.route('/clear-cache')
-def clear_cache_route():
-    server_file_cache.clear()
-    server_metadata_cache.clear()
-    if os.path.exists(CACHE_FILE):
-        os.remove(CACHE_FILE)
-    return redirect('/')
+if os.environ.get('APP_MODE', '').lower() == 'desktop':
+    register_routes(app.server)
 
 # Load custom HTML template
 with open(os.path.join(base_path, 'assets/index.html'), 'r', encoding='utf-8') as f:

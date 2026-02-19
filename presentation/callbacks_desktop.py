@@ -1,16 +1,27 @@
 import json
 import base64
+import os
+import time
 import dash
+from flask import redirect
 from dash import html, Input, Output, State, no_update
 from presentation.styles import ERROR_MESSAGE, ERROR_TEXT, SUCCESS_MESSAGE, SUCCESS_TEXT, ICON_LARGE, NOTIFICATION_BASE
 from presentation.callbacks_cache import (
     server_file_cache, server_metadata_cache,
     save_cache, extract_file_metadata, validate_file_size, CACHE_FILE
 )
-import time
-import os
 from security.security import validate_upload
 from data.parsers_secure import parse_xml_scores
+
+
+def register_routes(server):
+    @server.route('/clear-cache')
+    def clear_cache_route():
+        server_file_cache.clear()
+        server_metadata_cache.clear()
+        if os.path.exists(CACHE_FILE):
+            os.remove(CACHE_FILE)
+        return redirect('/')
 
 TH = {'padding': '8px', 'textAlign': 'left', 'borderBottom': '2px solid #ddd'}
 TH_CENTER = {'padding': '8px', 'textAlign': 'center', 'borderBottom': '2px solid #ddd'}
