@@ -41,7 +41,8 @@ jobs:
     
     - name: Build executable
       run: |
-        pyinstaller --onefile --name ${{ matrix.artifact_name }} --icon=${{ matrix.icon }} --add-data "assets${{ matrix.separator }}assets" --add-data "samples${{ matrix.separator }}samples" --add-data ".env.desktop${{ matrix.separator }}." --hidden-import=waitress app.py
+        python -c "import os, shutil; os.makedirs('.env_build'); shutil.copy('.env.desktop', '.env_build/.env')"
+        pyinstaller --onefile --name ${{ matrix.artifact_name }} --icon=${{ matrix.icon }} --add-data "assets${{ matrix.separator }}assets" --add-data "samples${{ matrix.separator }}samples" --add-data ".env_build/.env${{ matrix.separator }}." --hidden-import=waitress app.py
     
     - name: Upload artifact
       uses: actions/upload-artifact@v4

@@ -20,7 +20,7 @@ else:
 app = dash.Dash(__name__)
 app.config.suppress_callback_exceptions = True
 
-load_dotenv(os.path.join(base_path, '.env.desktop' if getattr(sys, 'frozen', False) else '.env'))
+load_dotenv(os.path.join(base_path, '.env'))
 
 # Initialize rate limiter
 limiter = Limiter(

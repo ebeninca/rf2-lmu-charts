@@ -83,16 +83,19 @@ prod: install
 dist-lnx: install
 	@echo "🏗️ Building Linux distributable..."
 	$(VENV_PIP) install pyinstaller
-	$(VENV_PYTHON) -c "import shutil, os, glob; [shutil.rmtree(d) for d in ['build', 'dist'] if os.path.exists(d)]; [os.remove(f) for f in glob.glob('*.spec')]"
-	$(VENV_PYTHON) -m PyInstaller --onefile --name rf2-lmu-charts --icon=assets/finish-flag.png --add-data "assets:assets" --add-data "samples:samples" --add-data ".env.desktop:." --hidden-import=waitress app.py
+	$(VENV_PYTHON) -c "import shutil, os, glob; [shutil.rmtree(d) for d in ['build', 'dist', '.env_build'] if os.path.exists(d)]; [os.remove(f) for f in glob.glob('*.spec')]; os.makedirs('.env_build'); shutil.copy('.env.desktop', '.env_build/.env')"
+	$(VENV_PYTHON) -m PyInstaller --onefile --name rf2-lmu-charts --icon=assets/finish-flag.png --add-data "assets:assets" --add-data "samples:samples" --add-data ".env_build/.env:." --hidden-import=waitress app.py
+	$(VENV_PYTHON) -c "import shutil; shutil.rmtree('.env_build')"
 	@echo "✅ Linux build complete: dist/rf2-lmu-charts"
+
 
 # Dist-Windows: build distributable for Windows
 dist-win: install
 	@echo "🏗️ Building Windows distributable..."
 	$(VENV_PIP) install pyinstaller
-	$(VENV_PYTHON) -c "import shutil, os, glob; [shutil.rmtree(d) for d in ['build', 'dist'] if os.path.exists(d)]; [os.remove(f) for f in glob.glob('*.spec')]"
-	$(VENV_PYTHON) -m PyInstaller --onefile --name rf2-lmu-charts-windows.exe --icon=assets/finish-flag.ico --add-data "assets;assets" --add-data "samples;samples" --add-data ".env.desktop;." --hidden-import=waitress app.py
+	$(VENV_PYTHON) -c "import shutil, os, glob; [shutil.rmtree(d) for d in ['build', 'dist', '.env_build'] if os.path.exists(d)]; [os.remove(f) for f in glob.glob('*.spec')]; os.makedirs('.env_build'); shutil.copy('.env.desktop', '.env_build/.env')"
+	$(VENV_PYTHON) -m PyInstaller --onefile --name rf2-lmu-charts-windows.exe --icon=assets/finish-flag.ico --add-data "assets;assets" --add-data "samples;samples" --add-data ".env_build/.env;." --hidden-import=waitress app.py
+	$(VENV_PYTHON) -c "import shutil; shutil.rmtree('.env_build')"
 	@echo "✅ Windows build complete: dist/rf2-lmu-charts-windows.exe"
 
 # Clean: remove venv and temporary files

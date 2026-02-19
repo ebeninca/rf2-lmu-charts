@@ -92,7 +92,3 @@ Test security implementation:
 ```bash
 python test_security.py
 ```
-
-# PENDENCIAS MOMENTANEAS DA BRANCH DESKTOP-DIST
-
-- make / github .env
