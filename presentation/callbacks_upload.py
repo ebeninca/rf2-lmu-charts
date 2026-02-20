@@ -41,7 +41,8 @@ def register_upload_callbacks(app, initial_df, initial_race_info, initial_incide
             return df.to_dict('records'), race_info, incidents, html.Div(
                 html.Div([html.Span('✅ ', style=ICON_LARGE),
                           html.Span(f'{filename} loaded successfully!', style=SUCCESS_TEXT)],
-                         style={**SUCCESS_MESSAGE, **NOTIFICATION_BASE})), None
+                         style={**SUCCESS_MESSAGE, **NOTIFICATION_BASE}),
+                key=f'success-{time.time()}'), None
         except ValueError as e:
             log_suspicious_activity('unknown', 'invalid_file', f'{filename}: {str(e)}')
             return no_update, no_update, no_update, html.Div(

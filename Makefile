@@ -66,17 +66,19 @@ audit: install-dev
 # Run: run application in development
 run: install
 	@echo "🚀 Starting application..."
-	$(VENV_PYTHON) -c "import os; os.environ['DEBUG']='True'" && \
+	cp .env.web .env
 	DEBUG=True $(VENV_PYTHON) app.py
 
 # Desktop: run in desktop mode with waitress
 desktop: install
 	@echo "🖥️  Starting in desktop mode with waitress..."
+	cp .env.desktop .env
 	$(VENV_PYTHON) -c "from waitress import serve; from app import app; serve(app.server, host='0.0.0.0', port=7860, threads=4, channel_timeout=120)"
 
 # Prod: run with gunicorn
 prod: install
 	@echo "🚀 Starting in production mode..."
+	cp .env.web .env
 	$(VENV_PYTHON) -m gunicorn -c gunicorn.conf.py server:server
 
 # Dist-Linux: build distributable for Linux

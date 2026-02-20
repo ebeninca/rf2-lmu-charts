@@ -17,11 +17,11 @@ if getattr(sys, 'frozen', False):
 else:
     base_path = os.path.dirname(__file__)
 
+load_dotenv(os.path.join(base_path, '.env'), override=True)
+
 # Initialize Dash app
 app = dash.Dash(__name__)
 app.config.suppress_callback_exceptions = True
-
-load_dotenv(os.path.join(base_path, '.env'))
 
 # Initialize rate limiter
 limiter = Limiter(
@@ -36,7 +36,8 @@ limiter = Limiter(
 @app.server.after_request
 def apply_security_headers(response):
     return add_security_headers(response)
-
+    
+print('ENV APP_MODE >> ' + os.environ.get('APP_MODE'))
 if os.environ.get('APP_MODE', '').lower() == 'desktop':
     register_routes(app.server)
 
@@ -61,7 +62,7 @@ app.layout = create_main_layout(initial_df, initial_race_info, initial_incidents
 register_callbacks(app, initial_df, initial_race_info, initial_incidents)
 
 if __name__ == '__main__':
-    
+
     debug_mode = os.environ.get('DEBUG', 'False') == 'True'
     
     if debug_mode:

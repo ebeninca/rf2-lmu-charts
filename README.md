@@ -24,47 +24,25 @@ Alternatively you can download the Release for Linux and Windows in this page.
 
 ## How to run the source code locally
 
+Use the Makefile: 
+
+```sh
+make help
+```
+
 Address in all cases: http://localhost:7860/
 
 ### Local development (Flask)
 
 Why? Flask allows hot-deploy
 
-```sh 
-$ DEBUG=True python app.py
-``` 
-
 ### Build for standalone execution (PyInstaller / Waitress server)
 
 Why? Waitress (multi-thread) runs both in Windows and Linux
 
-Linux
-
-```sh
-$ rm -rf build dist *.spec && pyinstaller --onefile --name rf2-lmu-charts --icon=assets/finish-flag.png --add-data "assets:assets" --add-data "samples:samples" --hidden-import=waitress app.py 2>&1 | tail -10
-```
-
-Windows 
-
-```sh
-$ rmdir /s /q build dist & del /q *.spec & pip install pyinstaller & pyinstaller --onefile --name rf2-lmu-charts-windows.exe --icon=assets/finish-flag.ico --add-data "assets;assets" --add-data "samples;samples" --hidden-import=waitress app.py
-
-```
-
 ### Production (Gunicorn / Docker)
 
-Why? Gunicorn runs multi-process, more efficient for Python
-
-```sh
-$ docker build -t rf2-lmu-charts .
-$ docker run -p 7860:7860 rf2-lmu-charts
-```
-
-To stop the container
-
-```sh
-$ docker stop rf2-lmu-charts && docker rm rf2-lmu-charts
-```
+Why? Gunicorn runs multi-process, more efficient on resources usage for Python
 
 ## Backlog
 
@@ -82,13 +60,3 @@ This application implements comprehensive security measures including:
 - Security headers (CSP, XSS protection)
 - Request timeouts
 - Secure XML parsing
-
-For details, see:
-- [SECURITY_README.md](SECURITY_README.md) - Quick start guide
-- [SECURITY.md](SECURITY.md) - Complete security plan
-- [SECURITY_IMPLEMENTATION.md](SECURITY_IMPLEMENTATION.md) - Implementation details
-
-Test security implementation:
-```bash
-python test_security.py
-```

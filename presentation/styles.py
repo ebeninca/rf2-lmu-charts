@@ -115,5 +115,5 @@ NOTIFICATION_BASE = {
     'boxShadow': '0 4px 8px rgba(0,0,0,0.2)',
     'minWidth': '300px',
     'maxWidth': '600px',
-    'animation': 'fadeOut 1s ease-in 6s forwards'
+    'animation': 'fadeOut 1s ease-in 4s forwards'
 }
